@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Library System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* [Previous CSS styles remain the same - keeping it short] */
+        :root {
+            --primary: #1e293b;
+            --accent: #3b82f6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border: #e2e8f0;
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #e2e8f0 100%);
+            min-height: 100vh;
+            color: var(--text-primary);
+        }
+
+        .nav-tabs {
+            max-width: 1200px;
+            margin: 0 auto 2rem;
+            padding: 0 2rem;
+            display: flex;
+            gap: 0.5rem;
+            background: var(--bg-secondary);
+            padding: 1rem 2rem;
+            border-radius: 20px 20px 0 0;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border);
+        }
+
+        .nav-tab {
+            flex: 1;
+            padding: 1rem;
+            text-align: center;
+            background: none;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 16px;
+            transition: all 0.3s ease;
+            color: var(--text-secondary);
+        }
+
+        .nav-tab.active {
+            background: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .page-content {
+            max-width: 1200px;
+            margin: 0 auto 2rem;
+            padding: 0 2rem;
+        }
+
+        /* HOME PAGE STYLES */
+        .home-hero {
+            background: var(--bg-secondary);
+            border-radius: 0 0 20px 20px;
+            padding: 3rem 2rem;
+            box-shadow: var(--shadow-xl);
+            border: 1px solid var(--border);
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .system-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.5rem 3rem;
+            border-radius: 20px;
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+        }
+
+        .status-active { background: rgba(16,185,129,0.15); color: var(--success); border: 2px solid var(--success); }
+        .status-inactive { background: rgba(239,68,68,0.15); color: var(--danger); border: 2px solid var(--danger); }
+
+        .status-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-active .status-dot { background: var(--success); }
+        .status-inactive .status-dot { background: var(--danger); animation: none; }
+
+        .recent-activity {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .activity-card {
+            background: var(--bg-secondary);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border);
+            transition: transform 0.3s ease;
+        }
+
+        .activity-card:hover { transform: translateY(-4px); }
+
+        .activity-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .activity-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+        }
+
+        .icon-scan { background: var(--accent); }
+        .icon-book { background: var(--success); }
+        .icon-admin { background: var(--warning); }
+
+        .activity-content h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .activity-meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        /* DASHBOARD STYLES */
+        .dashboard-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            padding: 1.75rem;
+            border-radius: 16px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-xl); }
+
+        .stat-icon { 
+            width: 56px; 
+            height: 56px; 
+            border-radius: 14px; 
+            margin: 0 auto 1rem; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 1.5rem; 
+            color: white; 
+        }
+
+        .stat-primary .stat-icon { background: var(--accent); }
+        .stat-success .stat-icon { background: var(--success); }
+
+        .stat-value { font-size: 2.25rem; font-weight: 700; color: var(--primary); margin-bottom: 0.25rem; }
+        .stat-label { color: var(--text-secondary); font-weight: 500; }
+
+        .table-container {
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: var(--shadow-xl);
+            border: 1px solid var(--border);
+        }
+
+        .table-header {
+            background: linear-gradient(135deg, var(--primary), #0f172a);
+            padding: 1.5rem 2rem;
+            color: white;
+        }
+
+        .table-controls { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            color: white;
+            background: var(--accent);
+            text-decoration: none;
+        }
+
+        .btn:hover { background: #2563eb; transform: translateY(-1px); }
+
+        table { width: 100%; border-collapse: collapse; }
+        th, td { 
+            padding: 1.25rem 1rem; 
+            text-align: left; 
+            border-bottom: 1px solid var(--border); 
+        }
+
+        th { 
+            background: rgba(255,255,255,0.1); 
+            font-weight: 600; 
+            color: rgba(255,255,255,0.9); 
+            text-transform: uppercase; 
+            font-size: 0.75rem; 
+            letter-spacing: 0.05em; 
+        }
+
+        tbody tr:hover { background: rgba(59,130,246,0.05); }
+
+        .status-badge {
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-borrowed { background: rgba(245,158,11,0.2); color: var(--warning); }
+        .status-returned { background: rgba(16,185,129,0.2); color: var(--success); }
+
+        .tag-id {
+            font-family: monospace;
+            background: #f1f5f9;
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            color: var(--primary);
+        }
+
+        .hidden { display: none !important; }
+
+        .loader, .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-secondary);
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border);
+            border-top: 3px solid var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @media (max-width: 768px) {
+            .page-content, .nav-tabs { padding: 0 1rem; }
+            .recent-activity { grid-template-columns: 1fr; }
+            .nav-tabs { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <div class="nav-tabs">
+        <button class="nav-tab active" onclick="showPage('home')">
+            <i class="fas fa-home"></i> Home
+        </button>
+        <button class="nav-tab" onclick="showPage('dashboard')">
+            <i class="fas fa-chart-line"></i> Dashboard
+        </button>
+    </div>
+
+    <!-- HOME PAGE -->
+    <div id="homePage" class="page-content">
+        <div class="home-hero">
+            <div class="system-status" id="systemStatus">
+                <span class="status-dot"></span>
+                <span>Connecting...</span>
+            </div>
+            <h1 style="font-size: 3rem; font-weight: 700; margin: 1rem 0; background: linear-gradient(135deg, var(--primary), var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                Smart Library System
+            </h1>
+            <p style="font-size: 1.2rem; color: var(--text-secondary); max-width: 600px; margin: 0 auto;">
+                Real-time monitoring of book scans and system status
+            </p>
+        </div>
+
+        <div class="recent-activity">
+            <div class="activity-card">
+                <div class="activity-header">
+                    <div class="activity-icon icon-scan">
+                        <i class="fas fa-scan"></i>
+                    </div>
+                    <div class="activity-content">
+                        <h3 id="lastScanTitle">No scans yet</h3>
+                        <div class="activity-meta">
+                            <span id="lastScanTime">--</span>
+                            <span id="lastScanCard">--</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="activity-card">
+                <div class="activity-header">
+                    <div class="activity-icon icon-book">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <div class="activity-content">
+                        <h3>Total Books Scanned Today</h3>
+                        <div class="activity-meta">
+                            <span id="todayScans">0</span>
+                            <span>| Borrowed: <span id="todayBorrowed">0</span></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DASHBOARD PAGE -->
+    <div id="dashboardPage" class="page-content hidden">
+        <div class="dashboard-stats">
+            <div class="stat-card stat-primary">
+                <div class="stat-icon"><i class="fas fa-book"></i></div>
+                <div class="stat-value" id="totalBooks">0</div>
+                <div class="stat-label">Total Records</div>
+            </div>
+            <div class="stat-card stat-success">
+                <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                <div class="stat-value" id="borrowedCount">0</div>
+                <div class="stat-label">Borrowed Books</div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <div class="table-header">
+                <div class="table-controls">
+                    <button class="btn" onclick="refreshDashboard()">
+                        <i class="fas fa-sync-alt" id="refreshIcon"></i> Refresh
+                    </button>
+                    <div style="color: rgba(255,255,255,0.9);">
+                        Last updated: <span id="dashboardLastUpdate">--</span>
+                    </div>
+                </div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-id-card"></i> Card ID</th>
+                        <th><i class="fas fa-book"></i> Book Name</th>
+                        <th><i class="fas fa-info-circle"></i> Status</th>
+                        <th><i class="fas fa-calendar"></i> Date</th>
+                        <th><i class="fas fa-clock"></i> Time</th>
+                    </tr>
+                </thead>
+                <tbody id="dashboardTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // UPDATE WITH YOUR VERCEL URL
+        const BACKEND_URL = "http://localhost:3000";
+        let allLogs = [];
+
+        // Page switching
+        function showPage(page) {
+            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelector(`[onclick="showPage('${page}')"]`).classList.add('active');
+            
+            document.getElementById('homePage').classList.toggle('hidden', page !== 'home');
+            document.getElementById('dashboardPage').classList.toggle('hidden', page !== 'dashboard');
+            
+            if (page === 'dashboard') {
+                updateDashboard();
+            }
+        }
+
+        // Fetch data from Google Sheets (5 columns: Card ID, Book Name, Status, Date, Time)
+        async function fetchLogs() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/logs`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return await response.json();
+            } catch (error) {
+                console.error('Fetch error:', error);
+                throw error;
+            }
+        }
+
+        // Fetch system status
+        async function fetchStatus() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/status`);
+                return await response.json();
+            } catch {
+                return { isSystemActive: false };
+            }
+        }
+
+        // Update Home Page
+        async function updateHome() {
+            try {
+                const [logs, status] = await Promise.all([fetchLogs(), fetchStatus()]);
+                allLogs = logs;
+
+                // System Status
+                const systemStatus = document.getElementById('systemStatus');
+                if (status.isSystemActive) {
+                    systemStatus.className = 'system-status status-active';
+                    systemStatus.innerHTML = `
+                        <span class="status-dot"></span>
+                        <i class="fas fa-circle-check" style="font-size: 1.5rem;"></i>
+                        <span>🟢 SYSTEM ACTIVE</span>
+                    `;
+                } else {
+                    systemStatus.className = 'system-status status-inactive';
+                    systemStatus.innerHTML = `
+                        <span class="status-dot"></span>
+                        <i class="fas fa-circle-xmark" style="font-size: 1.5rem;"></i>
+                        <span>🔴 SYSTEM OFFLINE</span>
+                    `;
+                }
+
+                // Last Scan
+                if (logs.length > 0) {
+                    const lastScan = logs[logs.length - 1];
+                    document.getElementById('lastScanTitle').textContent = `Book "${lastScan[1]}" Scanned`;
+                    document.getElementById('lastScanTime').textContent = `${lastScan[3]} ${lastScan[4]}`;
+                    document.getElementById('lastScanCard').textContent = `Card ID: ${lastScan[0]}`;
+                } else {
+                    document.getElementById('lastScanTitle').textContent = 'No scans yet';
+                    document.getElementById('lastScanTime').textContent = '--';
+                    document.getElementById('lastScanCard').textContent = '--';
+                }
+
+                // Today's scans
+                const today = new Date().toLocaleDateString();
+                const todayLogs = logs.filter(log => {
+                    if (!log[0]) return false;
+                    const logDate = new Date(log[0]).toLocaleDateString();
+                    return logDate === today;
+                });
+                document.getElementById('todayScans').textContent = todayLogs.length;
+                document.getElementById('todayBorrowed').textContent = todayLogs.filter(log => log[2] === 'Borrowed').length;
+
+            } catch (error) {
+                console.error('Error updating home:', error);
+                document.getElementById('systemStatus').className = 'system-status status-inactive';
+                document.getElementById('systemStatus').innerHTML = `
+                    <span class="status-dot"></span>
+                    <i class="fas fa-circle-xmark" style="font-size: 1.5rem;"></i>
+                    <span>🔴 CONNECTION ERROR</span>
+                `;
+            }
+        }
+
+        // Update Dashboard Page
+        async function updateDashboard() {
+            try {
+                const logs = await fetchLogs();
+                allLogs = logs;
+
+                // Stats
+                document.getElementById('totalBooks').textContent = logs.length;
+                document.getElementById('borrowedCount').textContent = logs.filter(log => log[2] === 'Borrowed').length;
+
+                // Table
+                const tbody = document.getElementById('dashboardTableBody');
+                tbody.innerHTML = '';
+
+                if (logs.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No records found</td></tr>';
+                } else {
+                    logs.slice(-20).reverse().forEach(log => { // Show last 20 records
+                        const row = document.createElement('tr');
+                        const dateTime = log[0] ? new Date(log[0]) : new Date();
+                        const date = dateTime.toLocaleDateString();
+                        const time = dateTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+                        row.innerHTML = `
+                            <td><span class="tag-id">${log[1] || '--'}</span></td>
+                            <td>${getBookName(log[1]) || 'Unknown'}</td>
+                            <td><span class="status-badge ${log[2] === 'Borrowed' ? 'status-borrowed' : 'status-returned'}">${log[2] || 'Unknown'}</span></td>
+                            <td>${date}</td>
+                            <td>${time}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }
+
+                document.getElementById('dashboardLastUpdate').textContent = new Date().toLocaleString();
+
+            } catch (error) {
+                console.error('Error updating dashboard:', error);
+                document.getElementById('dashboardTableBody').innerHTML = '<tr><td colspan="5" class="empty-state">Error loading data</td></tr>';
+            }
+        }
+
+        // Get book name from card ID
+        function getBookName(cardId) {
+            const bookNames = {
+                'B1B1B1B1': 'Book 1',
+                'C2C2C2C2': 'Book 2'
+            };
+            return bookNames[cardId] || 'Unknown Book';
+        }
+
+        // Refresh dashboard
+        async function refreshDashboard() {
+            const refreshIcon = document.getElementById('refreshIcon');
+            refreshIcon.className = 'fas fa-spinner fa-spin';
+            
+            try {
+                await updateDashboard();
+            } finally {
+                refreshIcon.className = 'fas fa-sync-alt';
+            }
+        }
+
+        // Initialize the app
+        async function init() {
+            await updateHome();
+            setInterval(updateHome, 30000);
+        }
+
+        // Start when page loads
+        document.addEventListener('DOMContentLoaded', init);
+
+        // Initialize
+        async function init() {
+            await updateHome();
+            // Auto-refresh every 30 seconds
+            setInterval(updateHome, 30000);
+        }
+
+        // Load dashboard when switching to it
+        function showPage(page) {
+            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelector(`[onclick="showPage('${page}')"]`).classList.add('active');
+            
+            document.getElementById('homePage').classList.toggle('hidden', page !== 'home');
+            document.getElementById('dashboardPage').classList.toggle('hidden', page !== 'dashboard');
+            
+            if (page === 'dashboard') {
+                updateDashboard();
+            }
+        }
+
+        // Start the app
+        init();
+
+        // Fetch system status
+        async function fetchStatus() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/status`);
+                return await response.json();
+            } catch {
+                return { isSystemActive: false };
+            }
+        }
+
+        // Update Home Page
+        async function updateHome() {
+            try {
+                const [logs, status] = await Promise.all([fetchLogs(), fetchStatus()]);
+                allLogs = logs;
+
+                // System Status
+                const systemStatus = document.getElementById('systemStatus');
+                if (status.isSystemActive) {
+                    systemStatus.className = 'system-status status-active';
+                    systemStatus.innerHTML = `
+                        <span class="status-dot"></span>
+                        <i class="fas fa-circle-check" style="font-size: 1.5rem;"></i>
+                        <span>🟢 SYSTEM ACTIVE</span>
+                    `;
+                } else {
+                    systemStatus.className = 'system-status status-inactive';
+                    systemStatus.innerHTML = `
+                        <span class="status-dot"></span>
+                        <i class="fas fa-circle-xmark" style="font-size: 1.5rem;"></i>
+                        <span>🔴 SYSTEM OFFLINE</span>
+                    `;
+                }
+
+                // Last Scan
+                if (logs.length > 0) {
+                    const lastScan = logs[logs.length - 1];
+                    document.getElementById('lastScanTitle').textContent = `Book "${lastScan[1]}" Scanned`;
+                    document.getElementById('lastScanTime').textContent = `${lastScan[3]} ${lastScan[4]}`;
+                    document.getElementById('lastScanCard').textContent = `Card ID: ${lastScan[0]}`;
+                } else {
+                    document.getElementById('lastScanTitle').textContent = 'No scans yet';
+                    document.getElementById('lastScanTime').textContent = '--';
+                    document.getElementById('lastScanCard').textContent = '--';
+                }   
