@@ -460,9 +460,13 @@
                 // Last Scan
                 if (logs.length > 0) {
                     const lastScan = logs[logs.length - 1];
-                    document.getElementById('lastScanTitle').textContent = `Book "${lastScan[1]}" Scanned`;
-                    document.getElementById('lastScanTime').textContent = `${lastScan[3]} ${lastScan[4]}`;
-                    document.getElementById('lastScanCard').textContent = `Card ID: ${lastScan[0]}`;
+                    document.getElementById('lastScanTitle').textContent = `Book "${getBookName(lastScan[1])}" Scanned`;
+                    // Parse timestamp to get date and time
+                    const scanDateTime = new Date(lastScan[0]);
+                    const dateStr = scanDateTime.toLocaleDateString();
+                    const timeStr = scanDateTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    document.getElementById('lastScanTime').textContent = `${dateStr} ${timeStr}`;
+                    document.getElementById('lastScanCard').textContent = `Card ID: ${lastScan[1]}`;
                 } else {
                     document.getElementById('lastScanTitle').textContent = 'No scans yet';
                     document.getElementById('lastScanTime').textContent = '--';
@@ -509,7 +513,8 @@
                 } else {
                     logs.slice(-20).reverse().forEach(log => { // Show last 20 records
                         const row = document.createElement('tr');
-                        const dateTime = log[0] ? new Date(log[0]) : new Date();
+                        // Parse timestamp to get date and time
+                        const dateTime = new Date(log[0]);
                         const date = dateTime.toLocaleDateString();
                         const time = dateTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
 
