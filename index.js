@@ -16,13 +16,13 @@ app.get('/', (req, res) => {
 // --- إعدادات السيستم والكتب ---
 const ADMIN_CARD = "34FA78A3"; 
 const BOOKS = {
-    "AF69101C": "Circuits", // خليت الأسامي مختصرة عشان مساحة الـ LCD
+    "AF69101C": "Circuits", 
     "7135704C": "Math",
     "71D8714C": "Network"
 };
 
 let isSystemActive = false; 
-let booksStatus = {}; // متغير لحفظ حالة الكتب (استعارة ولا ترجيع)
+let booksStatus = {}; // يحفظ لو الكتاب Borrowed أو Returned
 
 // وظيفة لتسجيل البيانات في Google Sheets
 async function logToSheet(timestamp, tagId, status) {
@@ -48,16 +48,21 @@ app.post('/api/scan', async (req, res) => {
     const { tagId } = req.body;
     const timestamp = new Date().toLocaleString("en-GB", { timeZone: "Africa/Cairo" });
 
-    // 1. كارت الأدمن (فتح وقفل النظام)
+    // 1. منطق كارت الأدمن (فتح وقفل النظام)
     if (tagId === ADMIN_CARD) {
         isSystemActive = !isSystemActive;
         const adminMsg = isSystemActive ? "System ACTIVE" : "System LOCKED";
+        
         await logToSheet(timestamp, tagId, adminMsg);
+        console.log(`Admin Action: ${adminMsg}`);
+        
+        // الرد ده هو اللي بيخلي الـ ESP32 تغير حالتها محلياً
         return res.json({ status: adminMsg });
     }
 
     // 2. لو السيستم مقفول (LOCKED)
     if (!isSystemActive) {
+        await logToSheet(timestamp, tagId, "Rejected: Locked");
         return res.json({ status: "System LOCKED" });
     }
 
@@ -65,7 +70,7 @@ app.post('/api/scan', async (req, res) => {
     if (BOOKS[tagId]) {
         const bookName = BOOKS[tagId];
         
-        // تبديل الحالة (Toggle Logic)
+        // تبديل حالة الكتاب (Borrowed <-> Returned)
         if (!booksStatus[tagId] || booksStatus[tagId] === "Returned") {
             booksStatus[tagId] = "Borrowed";
         } else {
@@ -73,9 +78,10 @@ app.post('/api/scan', async (req, res) => {
         }
 
         const state = booksStatus[tagId];
+        // الرسالة اللي هتظهر فوراً على الـ LCD
         const displayMsg = `${bookName}:${state === "Borrowed" ? "BRW" : "RTN"}`;
         
-        await logToSheet(timestamp, tagId, state); // تسجيل الحالة (Borrowed/Returned) في الشيت
+        await logToSheet(timestamp, tagId, `${bookName} ${state}`);
         console.log(`Log: ${displayMsg}`);
         
         return res.json({ status: displayMsg }); 
@@ -86,7 +92,7 @@ app.post('/api/scan', async (req, res) => {
     res.json({ status: "Unknown Card" });
 });
 
-// باقي الـ APIs للـ Dashboard
+// APIs إضافية للـ Dashboard والـ Status
 app.get('/api/logs', async (req, res) => {
     try {
         const auth = new google.auth.GoogleAuth({
@@ -103,12 +109,12 @@ app.get('/api/logs', async (req, res) => {
 });
 
 app.get('/api/status', (req, res) => {
-    res.json({ isSystemActive });
+    res.json({ isSystemActive, booksStatus });
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`🚀 Smart Library Server on port ${PORT}`);
+    console.log(`🚀 Smart Library Server Ready on port ${PORT}`);
 });
 
 module.exports = app;
