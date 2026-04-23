@@ -7,7 +7,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// تشغيل الملفات الستاتيك (للوجهة الأمامية)
+// تشغيل الملفات الستاتيك للـ Dashboard
 app.use(express.static(path.join(__dirname)));
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
@@ -21,9 +21,9 @@ const BOOKS = {
     "71D8714C": "Network"
 };
 
-// الحالة الافتراضية عند تشغيل السيرفر هي LOCKED
+// الحالة الافتراضية
 let isSystemActive = false; 
-let booksStatus = {}; // لحفظ حالة كل كتاب (Borrowed/Returned)
+let booksStatus = {}; 
 
 // وظيفة لتسجيل البيانات في Google Sheets
 async function logToSheet(timestamp, tagId, status) {
@@ -44,28 +44,32 @@ async function logToSheet(timestamp, tagId, status) {
     }
 }
 
-// --- الـ Endpoint الأساسي لاستقبال الكروت ---
+// --- 1. Endpoint المزامنة (ده اللي الـ ESP32 بتناديه أول ما تشتغل) ---
+app.get('/api/status', (req, res) => {
+    // بيبعت حالة السيستم الحالية المخزنة على السيرفر
+    res.json({ isSystemActive: isSystemActive });
+});
+
+// --- 2. Endpoint المسح الأساسي ---
 app.post('/api/scan', async (req, res) => {
     const { tagId } = req.body;
     const timestamp = new Date().toLocaleString("en-GB", { timeZone: "Africa/Cairo" });
 
-    // 1. تشييك كارت الأدمن (يفتح ويقفل السيستم)
+    // أ- كارت الأدمن (يفتح ويقفل السيستم)
     if (tagId === ADMIN_CARD) {
         isSystemActive = !isSystemActive;
         const adminMsg = isSystemActive ? "System ACTIVE" : "System LOCKED";
         await logToSheet(timestamp, tagId, adminMsg);
-        console.log(`Admin Toggled System to: ${adminMsg}`);
         return res.json({ status: adminMsg });
     }
 
-    // 2. لو السيستم مقفول (LOCKED) وحاولت تسحب أي كارت تاني
+    // ب- لو السيستم مقفول (LOCKED)
     if (!isSystemActive) {
-        console.log(`Access Denied for Tag: ${tagId}`);
-        // بنبعت Access Denied عشان الـ ESP32 تعرضها وترجع لـ LOCKED
+        // أي كارت كتاب هيتحط والسيستم مقفول هيرد بـ Access Denied
         return res.json({ status: "Access Denied" });
     }
 
-    // 3. لو السيستم مفتوح (ACTIVE) والتاغ كارت كتاب معروف
+    // ج- لو السيستم مفتوح (ACTIVE) وكارت كتاب معروف
     if (BOOKS[tagId]) {
         const bookName = BOOKS[tagId];
         
@@ -80,20 +84,14 @@ app.post('/api/scan', async (req, res) => {
         const displayMsg = `${bookName}:${state === "Borrowed" ? "BRW" : "RTN"}`;
         
         await logToSheet(timestamp, tagId, `${bookName} ${state}`);
-        console.log(`Book Logged: ${displayMsg}`);
-        
         return res.json({ status: displayMsg }); 
     }
 
-    // 4. كارت غريب والسيستم مفتوح
+    // د- كارت غريب
     return res.json({ status: "Unknown Card" });
 });
 
-// APIs إضافية للـ Dashboard
-app.get('/api/status', (req, res) => {
-    res.json({ isSystemActive, booksStatus });
-});
-
+// --- 3. Endpoint السجلات للـ Dashboard ---
 app.get('/api/logs', async (req, res) => {
     try {
         const auth = new google.auth.GoogleAuth({
@@ -113,7 +111,7 @@ app.get('/api/logs', async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`🚀 Smart Library Backend Running...`);
+    console.log(`🚀 Smart Library Backend Ready`);
 });
 
 module.exports = app;
