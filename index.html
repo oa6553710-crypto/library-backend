@@ -16,7 +16,7 @@
 <body class="min-h-screen">
 
     <nav class="bg-white shadow-sm mb-8">
-        <div class="max-w-6xl mx-auto px-4">
+        <div class="max-w-6xl mx-auto px-4 text-sm font-medium">
             <div class="flex justify-between h-16 items-center">
                 <div class="flex space-x-4">
                     <button onclick="showPage('home')" id="home-btn" class="nav-link active px-6 py-2 rounded-lg transition-all flex items-center">
@@ -26,69 +26,61 @@
                         <i class="fas fa-chart-line mr-2"></i> Dashboard
                     </button>
                 </div>
-                <div id="connection-status" class="text-sm font-medium text-orange-500">
-                    <i class="fas fa-circle-notch fa-spin"></i> Connecting...
+                <div id="connection-status" class="flex items-center text-emerald-600">
+                    <i class="fas fa-circle text-[10px] mr-2"></i> Live
                 </div>
             </div>
         </div>
     </nav>
 
     <main class="max-w-6xl mx-auto px-4 pb-12">
-        
         <div id="home-page" class="space-y-8">
-            <div class="bg-white rounded-3xl p-12 text-center card-shadow">
-                <h1 class="text-5xl font-extrabold text-slate-800 mb-4">Smart Library System</h1>
-                <p class="text-slate-500 text-xl">Real-time monitoring of book scans and system status</p>
-                
-                <div id="system-badge" class="mt-8 inline-block px-8 py-3 rounded-full text-lg font-bold bg-gray-100 text-gray-500 transition-all">
-                    SYSTEM STATUS: LOADING...
-                </div>
+            <div class="bg-white rounded-3xl p-16 text-center card-shadow border border-gray-50">
+                <h1 class="text-6xl font-extrabold text-slate-800 mb-4 tracking-tight">Smart Library System</h1>
+                <p class="text-slate-400 text-xl font-light">Real-time monitoring of book scans and system status</p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div class="bg-white p-8 rounded-3xl card-shadow flex items-center space-x-6">
-                    <div id="status-icon" class="w-16 h-16 bg-blue-500 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg">
-                        <i class="fas fa-id-card"></i>
+                <div id="status-card-bg" class="bg-white p-8 rounded-3xl card-shadow flex items-center space-x-6 transition-all duration-500">
+                    <div id="status-icon" class="w-16 h-16 bg-slate-400 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg">
+                        <i class="fas fa-shield-alt"></i>
                     </div>
                     <div>
-                        <h3 id="last-scan-title" class="text-2xl font-bold text-slate-800">No scans yet</h3>
-                        <p id="last-scan-time" class="text-slate-400">-- : --</p>
+                        <h3 id="system-text" class="text-3xl font-black text-slate-800">Loading...</h3>
+                        <p id="last-update-time" class="text-slate-400 font-mono">--:--:--</p>
                     </div>
                 </div>
 
-                <div class="bg-white p-8 rounded-3xl card-shadow flex items-center space-x-6">
+                <div class="bg-white p-8 rounded-3xl card-shadow flex items-center space-x-6 border border-gray-50">
                     <div class="w-16 h-16 bg-emerald-500 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg">
-                        <i class="fas fa-book"></i>
+                        <i class="fas fa-book-reader"></i>
                     </div>
                     <div>
-                        <h3 class="text-slate-500 font-medium">Total Books Scanned Today</h3>
-                        <p class="text-3xl font-bold text-slate-800"><span id="total-count">0</span> <span class="text-lg font-normal text-slate-400 ml-2">| Borrowed: <span id="borrowed-count">0</span></span></p>
+                        <h3 class="text-slate-500 font-semibold uppercase tracking-wider text-xs mb-1">Currently Borrowed</h3>
+                        <p class="text-5xl font-black text-slate-800" id="borrowed-count">0</p>
                     </div>
                 </div>
             </div>
         </div>
 
         <div id="dashboard-page" class="hidden">
-            <div class="bg-white rounded-3xl card-shadow overflow-hidden">
-                <div class="p-6 bg-slate-800 text-white flex justify-between items-center">
-                    <h2 class="text-2xl font-bold">Activity Log (Google Sheets Sync)</h2>
-                    <button onclick="fetchData()" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm transition-all">
-                        <i class="fas fa-sync-alt mr-1"></i> Refresh Now
-                    </button>
+            <div class="bg-white rounded-3xl card-shadow overflow-hidden border border-gray-100">
+                <div class="p-8 bg-white border-b border-gray-100 flex justify-between items-center">
+                    <h2 class="text-3xl font-extrabold text-slate-800">Activity Log</h2>
+                    <span class="text-slate-400 text-sm font-medium" id="total-scans-label">0 Total Records</span>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left">
-                        <thead class="bg-slate-50 border-b border-slate-100">
+                        <thead class="bg-slate-50">
                             <tr>
-                                <th class="p-4 font-bold text-slate-600">Card ID</th>
-                                <th class="p-4 font-bold text-slate-600">Book Name</th>
-                                <th class="p-4 font-bold text-slate-600">Status</th>
-                                <th class="p-4 font-bold text-slate-600">Date</th>
-                                <th class="p-4 font-bold text-slate-600">Time</th>
+                                <th class="p-5 font-bold text-slate-500 uppercase text-xs tracking-widest">Card ID</th>
+                                <th class="p-5 font-bold text-slate-500 uppercase text-xs tracking-widest">Book Name</th>
+                                <th class="p-5 font-bold text-slate-500 uppercase text-xs tracking-widest">Status</th>
+                                <th class="p-5 font-bold text-slate-500 uppercase text-xs tracking-widest">Date</th>
+                                <th class="p-5 font-bold text-slate-500 uppercase text-xs tracking-widest">Time</th>
                             </tr>
                         </thead>
-                        <tbody id="logs-table-body" class="divide-y divide-slate-100 text-slate-700">
-                            </tbody>
+                        <tbody id="logs-table-body" class="divide-y divide-slate-100 text-slate-700"></tbody>
                     </table>
                 </div>
             </div>
@@ -96,108 +88,93 @@
     </main>
 
     <script>
-        // --- Logic & Syncing ---
         const API_BASE = window.location.origin;
 
         async function fetchData() {
             try {
-                // 1. Get Logs
-                const logsRes = await fetch(`${API_BASE}/api/logs`);
+                const [logsRes, statusRes] = await Promise.all([
+                    fetch(`${API_BASE}/api/logs`),
+                    fetch(`${API_BASE}/api/status`)
+                ]);
+                
                 const logs = await logsRes.json();
-                updateUI(logs);
-
-                // 2. Get System Status
-                const statusRes = await fetch(`${API_BASE}/api/status`);
                 const statusData = await statusRes.json();
+                
+                updateUI(logs);
                 updateSystemStatus(statusData.isSystemActive);
-
-                document.getElementById('connection-status').innerHTML = '<i class="fas fa-circle text-emerald-500 mr-1"></i> Live';
-                document.getElementById('connection-status').className = 'text-sm font-medium text-emerald-600';
             } catch (err) {
-                console.error("Fetch error:", err);
-                document.getElementById('connection-status').innerHTML = '<i class="fas fa-exclamation-triangle"></i> Disconnected';
-                document.getElementById('connection-status').className = 'text-sm font-medium text-red-500';
+                console.error("Sync Error");
             }
         }
 
         function updateUI(logs) {
-            // تجاهل الصف الأول (Header)
-            const dataRows = logs.slice(1).reverse(); // عرض الأحدث فوق
+            const dataRows = logs.slice(1); // تجاهل الهيدر
             const tbody = document.getElementById('logs-table-body');
             tbody.innerHTML = '';
 
-            let total = 0;
-            let borrowed = 0;
+            let currentBorrowed = 0;
+            // ترتيب البيانات بحيث الأحدث يظهر فوق
+            const displayRows = [...dataRows].reverse();
 
-            dataRows.forEach((row, index) => {
+            // حساب العداد المنطقي (Borrowed يزيد، Returned ينقص)
+            dataRows.forEach(row => {
+                const status = row[2];
+                if (status === 'Borrowed') currentBorrowed++;
+                if (status === 'Returned' && currentBorrowed > 0) currentBorrowed--;
+            });
+
+            displayRows.forEach((row) => {
                 const [id, name, status, date, time] = row;
-                
-                // تحديث الجدول
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-slate-50 transition-colors";
                 tr.innerHTML = `
-                    <td class="p-4 font-mono text-sm">${id || ''}</td>
-                    <td class="p-4">${name || ''}</td>
-                    <td class="p-4">
-                        <span class="px-3 py-1 rounded-full text-xs font-bold ${status === 'Borrowed' ? 'bg-orange-100 text-orange-600' : status === 'Returned' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}">
-                            ${status || ''}
+                    <td class="p-5 font-mono text-sm text-blue-600">${id}</td>
+                    <td class="p-5 font-semibold text-slate-800">${name}</td>
+                    <td class="p-5">
+                        <span class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-tighter ${status === 'Borrowed' ? 'bg-orange-100 text-orange-600' : status === 'Returned' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}">
+                            ${status}
                         </span>
                     </td>
-                    <td class="p-4 text-slate-500">${date || ''}</td>
-                    <td class="p-4 text-slate-500">${time || ''}</td>
+                    <td class="p-5 text-slate-400 text-sm">${date}</td>
+                    <td class="p-5 text-slate-400 text-sm">${time}</td>
                 `;
                 tbody.appendChild(tr);
-
-                // تحديث الـ Stats للـ Home
-                if (status === 'Borrowed' || status === 'Returned') total++;
-                if (status === 'Borrowed') borrowed++;
-
-                // تحديث أخر سحبة (Latest Scan)
-                if (index === 0) {
-                    document.getElementById('last-scan-title').innerText = `${name}: ${status}`;
-                    document.getElementById('last-scan-time').innerText = time;
-                }
             });
 
-            document.getElementById('total-count').innerText = total;
-            document.getElementById('borrowed-count').innerText = borrowed;
+            document.getElementById('borrowed-count').innerText = currentBorrowed;
+            document.getElementById('total-scans-label').innerText = `${dataRows.length} Total Records`;
+            
+            // تحديث وقت أخر عملية في الكارت
+            if (displayRows.length > 0) {
+                document.getElementById('last-update-time').innerText = displayRows[0][4];
+            }
         }
 
         function updateSystemStatus(isActive) {
-            const badge = document.getElementById('system-badge');
+            const systemText = document.getElementById('system-text');
+            const cardBg = document.getElementById('status-card-bg');
+            const icon = document.getElementById('status-icon');
+
             if (isActive) {
-                badge.innerText = "SYSTEM STATUS: ACTIVE";
-                badge.className = "mt-8 inline-block px-8 py-3 rounded-full text-lg font-bold bg-emerald-100 text-emerald-600 border-2 border-emerald-200";
+                systemText.innerText = "System ACTIVE";
+                systemText.className = "text-3xl font-black text-emerald-600";
+                icon.className = "w-16 h-16 bg-emerald-500 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg";
             } else {
-                badge.innerText = "SYSTEM STATUS: LOCKED";
-                badge.className = "mt-8 inline-block px-8 py-3 rounded-full text-lg font-bold bg-red-100 text-red-600 border-2 border-red-200";
+                systemText.innerText = "System LOCKED";
+                systemText.className = "text-3xl font-black text-red-600";
+                icon.className = "w-16 h-16 bg-red-500 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg";
             }
         }
 
         function showPage(page) {
-            const homeBtn = document.getElementById('home-btn');
-            const dashBtn = document.getElementById('dash-btn');
-            const homePage = document.getElementById('home-page');
-            const dashPage = document.getElementById('dashboard-page');
-
-            if (page === 'home') {
-                homePage.classList.remove('hidden');
-                dashPage.classList.add('hidden');
-                homeBtn.classList.add('active', 'text-white');
-                dashBtn.classList.remove('active', 'bg-blue-500', 'text-white');
-                dashBtn.classList.add('text-gray-600');
-            } else {
-                homePage.classList.add('hidden');
-                dashPage.classList.remove('hidden');
-                dashBtn.classList.add('active', 'text-white');
-                homeBtn.classList.remove('active', 'bg-blue-500', 'text-white');
-                homeBtn.classList.add('text-gray-600');
-            }
+            document.getElementById('home-page').classList.toggle('hidden', page !== 'home');
+            document.getElementById('dashboard-page').classList.toggle('hidden', page !== 'dashboard');
+            document.getElementById('home-btn').classList.toggle('active', page === 'home');
+            document.getElementById('dash-btn').classList.toggle('active', page === 'dashboard');
         }
 
-        // تحديث تلقائي كل 3 ثواني
         setInterval(fetchData, 3000);
-        fetchData(); // أول مرة عند التحميل
+        fetchData();
     </script>
 </body>
 </html>

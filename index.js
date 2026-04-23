@@ -99,7 +99,7 @@ app.post('/api/scan', async (req, res) => {
         }
 
         const state = booksStatus[tagId];
-        const displayMsg = `${bookName}:${state === "Borrowed" ? "BRW" : "RTN"}`;
+        const displayMsg = `${bookName}:${state === "Borrowed" ? "Borrowed" : "Returned"}`;
         
         // تسجيل البيانات بالترتيب الجديد
         await logToSheet(tagId, bookName, state);
