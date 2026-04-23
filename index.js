@@ -7,13 +7,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// تشغيل الملفات الستاتيك للـ Dashboard
 app.use(express.static(path.join(__dirname)));
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// --- إعدادات النظام والكتب (تأكد من الـ IDs الخاصة بكروتِك) ---
+// --- إعدادات النظام والكتب ---
 const ADMIN_CARD = "34FA78A3"; 
 const BOOKS = {
     "AF69101C": "Circuits", 
@@ -21,24 +20,20 @@ const BOOKS = {
     "71D8714C": "Network"
 };
 
-// --- إعدادات الجوجل شيت (انسخ الـ ID بتاعك هنا) ---
-const MY_SHEET_ID = "1hpD4Tgm9qU13_e_L22RxG9SA8cZ9oKQhYYjB9_4BtR0"; // <--- حط الـ ID بتاع الشيت بتاعك هنا
+const MY_SHEET_ID = "1hpD4Tgm9qU13_e_L22RxG9SA8cZ9oKQhYYjB9_4BtR0";
 
 let isSystemActive = false; 
 let booksStatus = {}; 
 
-// وظيفة لتسجيل البيانات في Google Sheets
-async function logToSheet(timestamp, tagId, status) {
+// --- وظيفة تسجيل البيانات المعدلة لترتيب الأعمدة ---
+async function logToSheet(tagId, bookName, status) {
     try {
-        // التأكد من وجود بيانات الـ Service Account في Vercel
         if (!process.env.GOOGLE_SERVICE_ACCOUNT) {
-            console.error("Missing GOOGLE_SERVICE_ACCOUNT in Vercel Variables!");
+            console.error("Missing GOOGLE_SERVICE_ACCOUNT!");
             return;
         }
 
         const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
-        
-        // تصحيح الـ Private Key (مهم جداً لبيئة Vercel)
         if (credentials.private_key) {
             credentials.private_key = credentials.private_key.replace(/\\n/g, '\n');
         }
@@ -50,58 +45,53 @@ async function logToSheet(timestamp, tagId, status) {
 
         const sheets = google.sheets({ version: 'v4', auth });
 
+        // تجهيز التاريخ والوقت منفصلين
+        const now = new Date();
+        const dateStr = now.toLocaleDateString("en-GB", { timeZone: "Africa/Cairo" });
+        const timeStr = now.toLocaleTimeString("en-GB", { timeZone: "Africa/Cairo" });
+
         await sheets.spreadsheets.values.append({
             spreadsheetId: MY_SHEET_ID,
-            range: 'Sheet1!A:C',
+            range: 'Sheet1!A:E', // وسعنا المدى لـ 5 أعمدة (A, B, C, D, E)
             valueInputOption: 'USER_ENTERED',
-            requestBody: { values: [[timestamp, tagId, status]] },
+            requestBody: { 
+                // الترتيب: A: ID | B: Name | C: Status | D: Date | E: Time
+                values: [[tagId, bookName, status, dateStr, timeStr]] 
+            },
         });
-        console.log(`Sheet updated: ${status}`);
+        console.log(`Sheet Updated: ${bookName} - ${status}`);
     } catch (e) {
         console.error('Google Sheets Error:', e.message);
     }
 }
 
-// --- 1. Endpoint المزامنة عند التشغيل ---
+// --- 1. Endpoint المزامنة ---
 app.get('/api/status', (req, res) => {
     res.json({ isSystemActive: isSystemActive });
-    console.log("Checking Env Variable...");
-if (process.env.GOOGLE_SERVICE_ACCOUNT) {
-    console.log("Variable EXISTS ✅");
-    try {
-        const testJson = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
-        console.log("JSON is VALID! Email is: " + testJson.client_email);
-    } catch (e) {
-        console.log("JSON is INVALID ❌: " + e.message);
-    }
-} else {
-    console.log("Variable is MISSING ❌");
-}
 });
 
 // --- 2. Endpoint المسح الأساسي ---
 app.post('/api/scan', async (req, res) => {
     const { tagId } = req.body;
-    const timestamp = new Date().toLocaleString("en-GB", { timeZone: "Africa/Cairo" });
 
-    // أ- كارت الأدمن (يفتح ويقفل السيستم)
+    // أ- كارت الأدمن
     if (tagId === ADMIN_CARD) {
         isSystemActive = !isSystemActive;
         const adminMsg = isSystemActive ? "System ACTIVE" : "System LOCKED";
-        await logToSheet(timestamp, tagId, adminMsg);
+        // بنبعت tagId واسم "Admin" والحالة
+        await logToSheet(tagId, "Admin Control", adminMsg);
         return res.json({ status: adminMsg });
     }
 
-    // ب- لو السيستم مقفول (LOCKED)
+    // ب- لو السيستم مقفول
     if (!isSystemActive) {
         return res.json({ status: "Access Denied" });
     }
 
-    // ج- لو السيستم مفتوح (ACTIVE) وكارت كتاب معروف
+    // ج- كارت كتاب معروف
     if (BOOKS[tagId]) {
         const bookName = BOOKS[tagId];
         
-        // تبديل حالة الكتاب (Borrowed <-> Returned)
         if (!booksStatus[tagId] || booksStatus[tagId] === "Returned") {
             booksStatus[tagId] = "Borrowed";
         } else {
@@ -111,11 +101,13 @@ app.post('/api/scan', async (req, res) => {
         const state = booksStatus[tagId];
         const displayMsg = `${bookName}:${state === "Borrowed" ? "BRW" : "RTN"}`;
         
-        await logToSheet(timestamp, tagId, `${bookName} ${state}`);
+        // تسجيل البيانات بالترتيب الجديد
+        await logToSheet(tagId, bookName, state);
         return res.json({ status: displayMsg }); 
     }
 
     // د- كارت غريب
+    await logToSheet(tagId, "Unknown Tag", "Denied");
     return res.json({ status: "Unknown Card" });
 });
 
@@ -129,7 +121,7 @@ app.get('/api/logs', async (req, res) => {
         const sheets = google.sheets({ version: 'v4', auth });
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId: MY_SHEET_ID,
-            range: 'Sheet1!A:C',
+            range: 'Sheet1!A:E', // عرض كل الأعمدة في الداشبورد
         });
         res.json(response.data.values || []);
     } catch (e) {
