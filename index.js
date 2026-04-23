@@ -13,7 +13,7 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// --- إعدادات النظام والكتب ---
+// --- إعدادات النظام والكتب (تأكد من الـ IDs الخاصة بكروتِك) ---
 const ADMIN_CARD = "34FA78A3"; 
 const BOOKS = {
     "AF69101C": "Circuits", 
@@ -21,33 +21,62 @@ const BOOKS = {
     "71D8714C": "Network"
 };
 
-// الحالة الافتراضية
+// --- إعدادات الجوجل شيت (انسخ الـ ID بتاعك هنا) ---
+const MY_SHEET_ID = "1hpD4Tgm9qU13_e_L22RxG9SA8cZ9oKQhYYjB9_4BtR0"; // <--- حط الـ ID بتاع الشيت بتاعك هنا
+
 let isSystemActive = false; 
 let booksStatus = {}; 
 
 // وظيفة لتسجيل البيانات في Google Sheets
 async function logToSheet(timestamp, tagId, status) {
     try {
+        // التأكد من وجود بيانات الـ Service Account في Vercel
+        if (!process.env.GOOGLE_SERVICE_ACCOUNT) {
+            console.error("Missing GOOGLE_SERVICE_ACCOUNT in Vercel Variables!");
+            return;
+        }
+
+        const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
+        
+        // تصحيح الـ Private Key (مهم جداً لبيئة Vercel)
+        if (credentials.private_key) {
+            credentials.private_key = credentials.private_key.replace(/\\n/g, '\n');
+        }
+
         const auth = new google.auth.GoogleAuth({
-            credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT),
+            credentials,
             scopes: ['https://www.googleapis.com/auth/spreadsheets'],
         });
+
         const sheets = google.sheets({ version: 'v4', auth });
+
         await sheets.spreadsheets.values.append({
-            spreadsheetId: process.env.SHEET_ID,
+            spreadsheetId: MY_SHEET_ID,
             range: 'Sheet1!A:C',
             valueInputOption: 'USER_ENTERED',
             requestBody: { values: [[timestamp, tagId, status]] },
         });
+        console.log(`Sheet updated: ${status}`);
     } catch (e) {
         console.error('Google Sheets Error:', e.message);
     }
 }
 
-// --- 1. Endpoint المزامنة (ده اللي الـ ESP32 بتناديه أول ما تشتغل) ---
+// --- 1. Endpoint المزامنة عند التشغيل ---
 app.get('/api/status', (req, res) => {
-    // بيبعت حالة السيستم الحالية المخزنة على السيرفر
     res.json({ isSystemActive: isSystemActive });
+    console.log("Checking Env Variable...");
+if (process.env.GOOGLE_SERVICE_ACCOUNT) {
+    console.log("Variable EXISTS ✅");
+    try {
+        const testJson = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
+        console.log("JSON is VALID! Email is: " + testJson.client_email);
+    } catch (e) {
+        console.log("JSON is INVALID ❌: " + e.message);
+    }
+} else {
+    console.log("Variable is MISSING ❌");
+}
 });
 
 // --- 2. Endpoint المسح الأساسي ---
@@ -65,7 +94,6 @@ app.post('/api/scan', async (req, res) => {
 
     // ب- لو السيستم مقفول (LOCKED)
     if (!isSystemActive) {
-        // أي كارت كتاب هيتحط والسيستم مقفول هيرد بـ Access Denied
         return res.json({ status: "Access Denied" });
     }
 
@@ -100,7 +128,7 @@ app.get('/api/logs', async (req, res) => {
         });
         const sheets = google.sheets({ version: 'v4', auth });
         const response = await sheets.spreadsheets.values.get({
-            spreadsheetId: process.env.SHEET_ID,
+            spreadsheetId: MY_SHEET_ID,
             range: 'Sheet1!A:C',
         });
         res.json(response.data.values || []);
