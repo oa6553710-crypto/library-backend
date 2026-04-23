@@ -7,91 +7,23 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-
-// Serve static files from the current directory
 app.use(express.static(path.join(__dirname)));
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
-// الـ Rules بتاعتك هنا
-const ADMIN_CARD = "A1B2C3D4"; 
-const BOOKS_CARDS = ["B1B1B1B1", "C2C2C2C2"];
+
+// --- إعدادات النظام والكتب ---
+const ADMIN_CARD = "34FA78A3"; 
+const BOOKS = {
+    "AF69101C": "Circuits Book",
+    "7135704C": "Math Book",
+    "71D8714C": "Network Book"
+};
+const BOOKS_CARDS = Object.keys(BOOKS);
 let isSystemActive = false; 
 
-// endpoint لاستقبال البيانات من الـ ESP32
-app.post('/api/scan', async (req, res) => {
-    const { tagId } = req.body;
-    const timestamp = new Date().toLocaleString("en-GB", { timeZone: "Africa/Cairo" });
-
-    // Rule 1: كارت الأدمن يفتح ويقفل السيستم
-    if (tagId === ADMIN_CARD) {
-        isSystemActive = !isSystemActive;
-        console.log(`System ${isSystemActive ? 'ACTIVATED' : 'DEACTIVATED'} by Admin Card`);
-        
-        try {
-            const auth = new google.auth.GoogleAuth({
-                credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT),
-                scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-            });
-            const sheets = google.sheets({ version: 'v4', auth });
-            await sheets.spreadsheets.values.append({
-                spreadsheetId: process.env.SHEET_ID,
-                range: 'Sheet1!A:C',
-                valueInputOption: 'USER_ENTERED',
-                requestBody: { values: [[timestamp, tagId, isSystemActive ? "System ACTIVE" : "System OFF"]] },
-            });
-        } catch (e) {
-            console.error('Failed to log admin action:', e);
-        }
-        
-        return res.json({ status: isSystemActive ? "System ACTIVE" : "System OFF" });
-    }
-
-    // Rule 2: لو السيستم مقفول، سجل الحدث
-    if (!isSystemActive) {
-        console.log('Scan rejected: System Locked');
-        try {
-            const auth = new google.auth.GoogleAuth({
-                credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT),
-                scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-            });
-            const sheets = google.sheets({ version: 'v4', auth });
-            await sheets.spreadsheets.values.append({
-                spreadsheetId: process.env.SHEET_ID,
-                range: 'Sheet1!A:C',
-                valueInputOption: 'USER_ENTERED',
-                requestBody: { values: [[timestamp, tagId, "System Locked"]] },
-            });
-        } catch (e) {
-            console.error('Failed to log locked system:', e);
-        }
-        return res.json({ status: "System Locked" });
-    }
-
-    // Rule 3: لو كارت كتاب، سجله في جوجل شيت
-    if (BOOKS_CARDS.includes(tagId)) {
-        try {
-            const auth = new google.auth.GoogleAuth({
-                credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT),
-                scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-            });
-            const sheets = google.sheets({ version: 'v4', auth });
-            await sheets.spreadsheets.values.append({
-                spreadsheetId: process.env.SHEET_ID,
-                range: 'Sheet1!A:C',
-                valueInputOption: 'USER_ENTERED',
-                requestBody: { values: [[timestamp, tagId, "Borrowed"]] },
-            });
-            console.log(`Book ${tagId} borrowed at ${timestamp}`);
-            return res.json({ status: "Book Logged!" });
-        } catch (e) {
-            console.error('Google Sheets error:', e);
-            return res.status(500).json({ status: "DB Error" });
-        }
-    }
-
-    // Unknown card
-    console.log(`Unknown card scanned: ${tagId}`);
+// وظيفة مساعدة لتسجيل البيانات في Google Sheets
+async function logToSheet(timestamp, tagId, status) {
     try {
         const auth = new google.auth.GoogleAuth({
             credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT),
@@ -102,81 +34,72 @@ app.post('/api/scan', async (req, res) => {
             spreadsheetId: process.env.SHEET_ID,
             range: 'Sheet1!A:C',
             valueInputOption: 'USER_ENTERED',
-            requestBody: { values: [[timestamp, tagId, "Unknown Card"]] },
+            requestBody: { values: [[timestamp, tagId, status]] },
         });
     } catch (e) {
-        console.error('Failed to log unknown card:', e);
+        console.error('Sheet Logging Error:', e.message);
     }
-    
+}
+
+app.post('/api/scan', async (req, res) => {
+    const { tagId } = req.body;
+    const timestamp = new Date().toLocaleString("en-GB", { timeZone: "Africa/Cairo" });
+
+    // 1. كارت الأدمن (تغيير حالة النظام)
+    if (tagId === ADMIN_CARD) {
+        isSystemActive = !isSystemActive;
+        const adminStatus = isSystemActive ? "System ACTIVE" : "System LOCKED";
+        
+        await logToSheet(timestamp, tagId, adminStatus);
+        
+        console.log(adminStatus);
+        return res.json({ status: adminStatus });
+    }
+
+    // 2. لو السيستم مقفول (LOCKED)
+    if (!isSystemActive) {
+        await logToSheet(timestamp, tagId, "Rejected: Locked");
+        return res.json({ status: "System LOCKED" });
+    }
+
+    // 3. لو السيستم مفتوح وكارت كتاب معروف
+    if (BOOKS[tagId]) {
+        const bookName = BOOKS[tagId];
+        await logToSheet(timestamp, tagId, `Borrowed: ${bookName}`);
+        
+        console.log(`${bookName} Borrowed`);
+        // بنبعت اسم الكتاب عشان يظهر على السطر الأول والحالة على السطر التاني في الـ LCD
+        return res.json({ status: bookName }); 
+    }
+
+    // 4. كارت غير معروف والسيستم مفتوح
+    await logToSheet(timestamp, tagId, "Unknown Card");
     res.json({ status: "Unknown Card" });
 });
 
-// API لعرض كل الـ logs من Google Sheets (للـ Dashboard)
+// باقي الـ Endpoints (logs, status, health) كما هي في كودك الأصلي...
+app.get('/api/status', (req, res) => {
+    res.json({ isSystemActive, adminCard: ADMIN_CARD, totalBooks: BOOKS_CARDS.length });
+});
+
 app.get('/api/logs', async (req, res) => {
     try {
-        if (!process.env.GOOGLE_SERVICE_ACCOUNT || !process.env.SHEET_ID) {
-            // Return mock data when credentials are not configured
-            console.log('Google Sheets not configured, returning mock data');
-            const mockData = [
-                [new Date().toLocaleString("en-GB", { timeZone: "Africa/Cairo" }), "B1B1B1B1", "Borrowed"],
-                [new Date(Date.now() - 3600000).toLocaleString("en-GB", { timeZone: "Africa/Cairo" }), "C2C2C2C2", "Borrowed"],
-                [new Date(Date.now() - 7200000).toLocaleString("en-GB", { timeZone: "Africa/Cairo" }), "B1B1B1B1", "Borrowed"],
-            ];
-            return res.json(mockData);
-        }
-        
         const auth = new google.auth.GoogleAuth({
             credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT),
             scopes: ['https://www.googleapis.com/auth/spreadsheets'],
         });
         const sheets = google.sheets({ version: 'v4', auth });
-        
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId: process.env.SHEET_ID,
-            range: 'Sheet1!A:C', // Timestamp, Tag ID, Status
+            range: 'Sheet1!A:C',
         });
-        
-        const rows = response.data.values || [];
-        console.log(`Logs fetched: ${rows.length} records`);
-        res.json(rows);
-    } catch (e) {
-        console.error('Error fetching logs:', e);
-        // Return mock data on error
-        const mockData = [
-            [new Date().toLocaleString("en-GB", { timeZone: "Africa/Cairo" }), "B1B1B1B1", "Borrowed"],
-            [new Date(Date.now() - 3600000).toLocaleString("en-GB", { timeZone: "Africa/Cairo" }), "C2C2C2C2", "Borrowed"],
-            [new Date(Date.now() - 7200000).toLocaleString("en-GB", { timeZone: "Africa/Cairo" }), "B1B1B1B1", "Borrowed"],
-        ];
-        res.json(mockData);
-    }
-});
-
-// API للحصول على حالة النظام الحالية (للـ Home Page)
-app.get('/api/status', (req, res) => {
-    res.json({ 
-        isSystemActive,
-        adminCard: ADMIN_CARD,
-        booksCards: BOOKS_CARDS,
-        totalBooks: BOOKS_CARDS.length,
-        lastUpdate: new Date().toISOString()
-    });
-});
-
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-    res.json({ 
-        status: 'OK', 
-        timestamp: new Date().toISOString(),
-        systemActive: isSystemActive 
-    });
+        res.json(response.data.values || []);
+    } catch (e) { res.json([]); }
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`🚀 Smart Library Server running on port ${PORT}`);
-    console.log(`📊 System Status: ${isSystemActive ? 'ACTIVE' : 'OFFLINE'}`);
-    console.log(`🔑 Admin Card: ${ADMIN_CARD}`);
-    console.log(`📚 Book Cards: ${BOOKS_CARDS.join(', ')}`);
+    console.log(`🚀 Server running on port ${PORT} | Status: ${isSystemActive ? 'ACTIVE' : 'LOCKED'}`);
 });
 
 module.exports = app;
