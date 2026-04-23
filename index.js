@@ -7,22 +7,24 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// تشغيل الملفات الستاتيك للـ Dashboard
 app.use(express.static(path.join(__dirname)));
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// --- إعدادات النظام والكتب ---
+// --- إعدادات السيستم والكتب ---
 const ADMIN_CARD = "34FA78A3"; 
 const BOOKS = {
-    "AF69101C": "Circuits Book",
-    "7135704C": "Math Book",
-    "71D8714C": "Network Book"
+    "AF69101C": "Circuits", // خليت الأسامي مختصرة عشان مساحة الـ LCD
+    "7135704C": "Math",
+    "71D8714C": "Network"
 };
-const BOOKS_CARDS = Object.keys(BOOKS);
-let isSystemActive = false; 
 
-// وظيفة مساعدة لتسجيل البيانات في Google Sheets
+let isSystemActive = false; 
+let booksStatus = {}; // متغير لحفظ حالة الكتب (استعارة ولا ترجيع)
+
+// وظيفة لتسجيل البيانات في Google Sheets
 async function logToSheet(timestamp, tagId, status) {
     try {
         const auth = new google.auth.GoogleAuth({
@@ -37,39 +39,46 @@ async function logToSheet(timestamp, tagId, status) {
             requestBody: { values: [[timestamp, tagId, status]] },
         });
     } catch (e) {
-        console.error('Sheet Logging Error:', e.message);
+        console.error('Sheet Error:', e.message);
     }
 }
 
+// --- الـ Endpoint الأساسي ---
 app.post('/api/scan', async (req, res) => {
     const { tagId } = req.body;
     const timestamp = new Date().toLocaleString("en-GB", { timeZone: "Africa/Cairo" });
 
-    // 1. كارت الأدمن (تغيير حالة النظام)
+    // 1. كارت الأدمن (فتح وقفل النظام)
     if (tagId === ADMIN_CARD) {
         isSystemActive = !isSystemActive;
-        const adminStatus = isSystemActive ? "System ACTIVE" : "System LOCKED";
-        
-        await logToSheet(timestamp, tagId, adminStatus);
-        
-        console.log(adminStatus);
-        return res.json({ status: adminStatus });
+        const adminMsg = isSystemActive ? "System ACTIVE" : "System LOCKED";
+        await logToSheet(timestamp, tagId, adminMsg);
+        return res.json({ status: adminMsg });
     }
 
     // 2. لو السيستم مقفول (LOCKED)
     if (!isSystemActive) {
-        await logToSheet(timestamp, tagId, "Rejected: Locked");
         return res.json({ status: "System LOCKED" });
     }
 
-    // 3. لو السيستم مفتوح وكارت كتاب معروف
+    // 3. لو كارت كتاب معروف والسيستم ACTIVE
     if (BOOKS[tagId]) {
         const bookName = BOOKS[tagId];
-        await logToSheet(timestamp, tagId, `Borrowed: ${bookName}`);
         
-        console.log(`${bookName} Borrowed`);
-        // بنبعت اسم الكتاب عشان يظهر على السطر الأول والحالة على السطر التاني في الـ LCD
-        return res.json({ status: bookName }); 
+        // تبديل الحالة (Toggle Logic)
+        if (!booksStatus[tagId] || booksStatus[tagId] === "Returned") {
+            booksStatus[tagId] = "Borrowed";
+        } else {
+            booksStatus[tagId] = "Returned";
+        }
+
+        const state = booksStatus[tagId];
+        const displayMsg = `${bookName}:${state === "Borrowed" ? "BRW" : "RTN"}`;
+        
+        await logToSheet(timestamp, tagId, state); // تسجيل الحالة (Borrowed/Returned) في الشيت
+        console.log(`Log: ${displayMsg}`);
+        
+        return res.json({ status: displayMsg }); 
     }
 
     // 4. كارت غير معروف والسيستم مفتوح
@@ -77,11 +86,7 @@ app.post('/api/scan', async (req, res) => {
     res.json({ status: "Unknown Card" });
 });
 
-// باقي الـ Endpoints (logs, status, health) كما هي في كودك الأصلي...
-app.get('/api/status', (req, res) => {
-    res.json({ isSystemActive, adminCard: ADMIN_CARD, totalBooks: BOOKS_CARDS.length });
-});
-
+// باقي الـ APIs للـ Dashboard
 app.get('/api/logs', async (req, res) => {
     try {
         const auth = new google.auth.GoogleAuth({
@@ -94,12 +99,16 @@ app.get('/api/logs', async (req, res) => {
             range: 'Sheet1!A:C',
         });
         res.json(response.data.values || []);
-    } catch (e) { res.json([]); }
+    } catch (e) { res.status(500).json([]); }
+});
+
+app.get('/api/status', (req, res) => {
+    res.json({ isSystemActive });
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT} | Status: ${isSystemActive ? 'ACTIVE' : 'LOCKED'}`);
+    console.log(`🚀 Smart Library Server on port ${PORT}`);
 });
 
 module.exports = app;
