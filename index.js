@@ -102,7 +102,7 @@ app.post('/api/scan', async (req, res) => {
         const bookName = BOOKS[tagId];
         const newState = (lastBookStatus === "Borrowed") ? "Returned" : "Borrowed";
         await logToSheet(tagId, bookName, newState);
-        return res.json({ status: `${bookName}:${newState === "Borrowed" ? "BRW" : "RTN"}` });
+        return res.json({ status: `${bookName} ${newState === "Borrowed" ? "Borrowed" : "Returned"}` });
     }
 
     return res.json({ status: "Unknown Card" });
