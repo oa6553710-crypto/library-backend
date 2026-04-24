@@ -1,6 +1,4 @@
-Here's your redesigned professional Smart Library System with enhanced visual design, keeping all JavaScript and backend code untouched:
 
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -233,33 +231,33 @@ Here's your redesigned professional Smart Library System with enhanced visual de
         let isSystemLocked = true;
 
         async function fetchData() {
-            try {
-                const [logsRes, statusRes] = await Promise.all([
-                    fetch(`${API_BASE}/api/logs`),
-                    fetch(`${API_BASE}/api/status`)
-                ]);
-                
-                const logs = await logsRes.json();
-                const statusData = await statusRes.json();
-                
-                // تحديث حالة القفل بناءً على رد الباك-إند الصريح
-                isSystemLocked = !statusData.isSystemActive;
+    try {
+        const [logsRes, statusRes] = await Promise.all([
+            fetch(`${API_BASE}/api/logs`),
+            fetch(`${API_BASE}/api/status`)
+        ]);
+        
+        const logs = await logsRes.json();
+        const statusData = await statusRes.json();
+        
+        // التعديل هنا: نربط الحالة بالمتغير وننفذ الإخفاء فوراً
+        isSystemLocked = !statusData.isSystemActive;
+        const lockScreen = document.getElementById('lock-screen');
 
-                const lockScreen = document.getElementById('lock-screen');
-                if (isSystemLocked) {
-                    lockScreen.classList.remove('hidden');
-                    showPage('home'); // إجبار العودة للهوم لو اتقفل
-                } else {
-                    lockScreen.classList.add('hidden');
-                }
-
-                updateUI(logs);
-                updateSystemStatus(statusData.isSystemActive);
-                
-            } catch (err) {
-                console.error("API Fetch Error:", err);
-            }
+        if (statusData.isSystemActive === true) {
+            lockScreen.style.display = 'none'; // إخفاء قطعي
+        } else {
+            lockScreen.style.display = 'flex'; // إظهار قطعي
+            showPage('home'); 
         }
+
+        updateUI(logs);
+        updateSystemStatus(statusData.isSystemActive);
+        
+    } catch (err) {
+        console.error("API Error:", err);
+    }
+}
 
         function updateUI(logs) {
             if (!Array.isArray(logs) || logs.length <= 1) return;
