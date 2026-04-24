@@ -39,9 +39,12 @@ async function getStatusFromSheet(targetTagId = null) {
         
         let systemActive = false;
         const adminRows = rows.filter(r => r[0] === ADMIN_CARD);
-        if (adminRows.length > 0) {
-            systemActive = (adminRows[adminRows.length - 1][2] === "System ACTIVE");
-        }
+        // استبدل الجزء ده جوه دالة getStatusFromSheet في الـ backend
+if (adminRows.length > 0) {
+    const lastStatus = adminRows[adminRows.length - 1][2] || "";
+    // تحويل النص لحروف صغيرة ومسح المسافات عشان نضمن المقارنة
+    systemActive = lastStatus.trim().toUpperCase() === "SYSTEM ACTIVE";
+}
 
         let lastBookStatus = "Returned"; 
         if (targetTagId) {
