@@ -9,10 +9,7 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800;900&display=swap');
         
-        * {
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
+        * { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
         
         body { 
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; 
@@ -22,122 +19,63 @@
         }
         
         body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            content: ''; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             background: 
                 radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
                 radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
                 radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
-            pointer-events: none;
-            z-index: -1;
+            pointer-events: none; z-index: -1;
         }
         
-        .glass-effect {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
+        .glass-effect { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.2); }
+        .nav-link { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .nav-link.active { background: linear-gradient(135deg, #6366f1, #8b5cf6); box-shadow: 0 20px 40px rgba(99, 102, 241, 0.4); transform: translateY(-2px); border-color: rgba(255, 255, 255, 0.3); color: white; }
+        .card-shadow { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.05); transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .status-card-hover:hover { transform: translateY(-8px) scale(1.02); }
+        .table-row-hover:hover { background: linear-gradient(90deg, rgba(99, 102, 241, 0.05), rgba(139, 92, 246, 0.05)); transform: translateX(4px); }
+        .connection-live { box-shadow: 0 0 20px rgba(16, 185, 129, 0.4); animation: pulse-glow 1.5s infinite; }
         
-        .nav-link {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        .nav-link.active { 
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
-            box-shadow: 0 20px 40px rgba(99, 102, 241, 0.4);
-            transform: translateY(-2px);
-            border-color: rgba(255, 255, 255, 0.3);
-        }
-        
-        .nav-link:hover:not(.active) {
-            background: rgba(255, 255, 255, 0.95);
-            transform: translateY(-1px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-        }
-        
-        .card-shadow { 
-            box-shadow: 
-                0 25px 50px -12px rgba(0, 0, 0, 0.15),
-                0 0 0 1px rgba(255, 255, 255, 0.05);
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        .card-shadow:hover {
-            transform: translateY(-4px);
-            box-shadow: 
-                0 35px 70px -15px rgba(0, 0, 0, 0.2),
-                0 0 0 1px rgba(255, 255, 255, 0.1);
-        }
-        
-        .status-card-hover {
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        .status-card-hover:hover {
-            transform: translateY(-8px) scale(1.02);
-        }
-        
-        .gradient-text {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
-        .status-badge {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            transform: translateZ(0);
-        }
-        
-        .table-row-hover {
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        .table-row-hover:hover {
-            background: linear-gradient(90deg, rgba(99, 102, 241, 0.05), rgba(139, 92, 246, 0.05));
-            transform: translateX(4px);
-        }
-        
-        @keyframes pulse-glow {
-            0%, 100% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.3); }
-            50% { box-shadow: 0 0 40px rgba(99, 102, 241, 0.6); }
-        }
-        
-        .pulse-glow {
-            animation: pulse-glow 2s infinite;
-        }
-        
-        .connection-live {
-            box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
-            animation: pulse-glow 1.5s infinite;
+        @keyframes pulse-glow { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+        /* شاشة القفل الزجاجية */
+        #lock-screen {
+            position: fixed; inset: 0; z-index: 9999;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(25px);
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.5s ease;
         }
     </style>
 </head>
 <body class="min-h-screen overflow-x-hidden">
+
+    <div id="lock-screen" class="hidden">
+        <div class="glass-effect p-12 rounded-[40px] text-center max-w-md mx-4 card-shadow border-2 border-white/20">
+            <div class="w-24 h-24 bg-gradient-to-br from-red-500 to-rose-600 rounded-3xl flex items-center justify-center text-white text-4xl mb-8 mx-auto shadow-2xl animate-pulse">
+                <i class="fas fa-user-shield"></i>
+            </div>
+            <h2 class="text-4xl font-black text-slate-800 mb-4">System Locked</h2>
+            <p class="text-slate-500 text-lg mb-8 leading-relaxed">The library management dashboard is currently restricted. Please scan the <b>Admin Card</b> to grant access.</p>
+            <div class="flex items-center justify-center space-x-3 text-indigo-600 font-bold bg-indigo-50 py-3 rounded-2xl">
+                <i class="fas fa-spinner fa-spin"></i>
+                <span class="tracking-widest uppercase text-sm">Awaiting Authorization</span>
+            </div>
+        </div>
+    </div>
 
     <nav class="glass-effect shadow-2xl sticky top-0 z-50 backdrop-blur-xl">
         <div class="max-w-7xl mx-auto px-6">
             <div class="flex justify-between h-20 items-center">
                 <div class="flex space-x-2">
                     <button onclick="showPage('home')" id="home-btn" class="nav-link active px-8 py-4 rounded-3xl flex items-center text-lg font-semibold shadow-lg">
-                        <i class="fas fa-home text-xl mr-3"></i> 
-                        <span>Home</span>
+                        <i class="fas fa-home text-xl mr-3"></i> <span>Home</span>
                     </button>
                     <button onclick="showPage('dashboard')" id="dash-btn" class="nav-link px-8 py-4 rounded-3xl flex items-center text-lg font-semibold shadow-lg">
-                        <i class="fas fa-chart-line text-xl mr-3"></i>
-                        <span>Dashboard</span>
+                        <i class="fas fa-chart-line text-xl mr-3"></i> <span>Dashboard</span>
                     </button>
                 </div>
                 <div id="connection-status" class="flex items-center px-6 py-3 rounded-2xl bg-emerald-500/20 backdrop-blur-sm border border-emerald-200/50 text-emerald-700 font-semibold connection-live">
-                    <i class="fas fa-wifi text-lg mr-2"></i>
-                    <span class="text-sm tracking-wide">Live Connection</span>
+                    <i class="fas fa-wifi text-lg mr-2"></i> <span class="text-sm tracking-wide">Live Connection</span>
                 </div>
             </div>
         </div>
@@ -145,70 +83,55 @@
 
     <main class="max-w-7xl mx-auto px-6 pb-16 pt-4">
         <div id="home-page" class="space-y-12">
-            <!-- Hero Section -->
             <div class="glass-effect rounded-3xl p-20 text-center card-shadow status-card-hover">
                 <div class="w-28 h-28 bg-gradient-to-br from-purple-500/20 to-indigo-500/20 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-2xl border-4 border-white/50">
                     <i class="fas fa-book-open text-4xl text-purple-500"></i>
                 </div>
-                <h1 class="text-7xl md:text-8xl font-black bg-gradient-to-r from-slate-800 via-slate-700 to-slate-900 bg-clip-text text-transparent mb-6 leading-tight">
-                    Smart Library
-                </h1>
-                <p class="text-xl md:text-2xl text-slate-600 font-light max-w-2xl mx-auto leading-relaxed">
-                    Advanced real-time monitoring and analytics for library operations
-                </p>
+                <h1 class="text-7xl md:text-8xl font-black bg-gradient-to-r from-slate-800 via-slate-700 to-slate-900 bg-clip-text text-transparent mb-6 leading-tight">Smart Library</h1>
+                <p class="text-xl md:text-2xl text-slate-600 font-light max-w-2xl mx-auto leading-relaxed italic">"Authorized Personnel Only"</p>
             </div>
 
-            <!-- Stats Grid -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <!-- System Status Card -->
-                <div id="status-card-bg" class="glass-effect p-10 rounded-3xl card-shadow status-card-hover flex items-start space-x-8 group">
-                    <div id="status-icon" class="w-24 h-24 bg-slate-400/80 rounded-3xl flex items-center justify-center text-white text-3xl shadow-2xl flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
+                <div id="status-card-bg" class="glass-effect p-10 rounded-3xl card-shadow status-card-hover flex items-start space-x-8">
+                    <div id="status-icon" class="w-24 h-24 bg-slate-400 rounded-3xl flex items-center justify-center text-white text-3xl shadow-2xl flex-shrink-0 transition-all duration-500">
                         <i class="fas fa-shield-alt"></i>
                     </div>
                     <div class="flex-1 min-w-0">
-                        <h3 id="system-text" class="text-4xl lg:text-5xl font-black text-slate-800 mb-2 leading-tight">Loading...</h3>
+                        <h3 id="system-text" class="text-4xl lg:text-5xl font-black text-slate-800 mb-2 leading-tight tracking-tighter">Syncing...</h3>
                         <p id="last-update-time" class="text-slate-500 font-mono text-lg bg-slate-100/50 px-4 py-2 rounded-xl inline-block tracking-wide">--:--:--</p>
                     </div>
                 </div>
 
-                <!-- Borrowed Count Card -->
-                <div class="glass-effect p-10 rounded-3xl card-shadow status-card-hover flex items-center space-x-8 group">
-                    <div class="w-24 h-24 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl flex items-center justify-center text-white text-3xl shadow-2xl flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
+                <div class="glass-effect p-10 rounded-3xl card-shadow status-card-hover flex items-center space-x-8">
+                    <div class="w-24 h-24 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl flex items-center justify-center text-white text-3xl shadow-2xl flex-shrink-0">
                         <i class="fas fa-book-reader"></i>
                     </div>
                     <div class="flex-1 text-right">
-                        <h3 class="text-slate-500 font-semibold uppercase tracking-widest text-sm mb-3 bg-slate-100/50 px-4 py-2 rounded-xl inline-block">Currently Borrowed</h3>
+                        <h3 class="text-slate-500 font-semibold uppercase tracking-widest text-xs mb-3 bg-slate-100/50 px-4 py-2 rounded-xl inline-block">Books Out</h3>
                         <p class="text-6xl lg:text-7xl font-black text-slate-800" id="borrowed-count">0</p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Dashboard Page -->
         <div id="dashboard-page" class="hidden">
-            <div class="glass-effect rounded-3xl card-shadow overflow-hidden">
+            <div class="glass-effect rounded-[40px] card-shadow overflow-hidden">
                 <div class="p-10 bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-200 flex justify-between items-center">
-                    <div>
-                        <h2 class="text-4xl font-black text-slate-800 tracking-tight">
-                            <i class="fas fa-list mr-3 text-slate-400"></i>
-                            Activity Log
-                        </h2>
-                    </div>
-                    <span class="text-slate-500 text-lg font-semibold bg-white/60 px-6 py-3 rounded-2xl backdrop-blur-sm border" id="total-scans-label">0 Total Records</span>
+                    <h2 class="text-4xl font-black text-slate-800 tracking-tight"><i class="fas fa-list mr-3 text-indigo-500"></i>Activity Log</h2>
+                    <span class="text-slate-500 text-lg font-semibold bg-white/60 px-6 py-3 rounded-2xl backdrop-blur-sm border" id="total-scans-label">0 Records</span>
                 </div>
-                
                 <div class="overflow-x-auto">
                     <table class="w-full">
-                        <thead class="bg-gradient-to-r from-slate-50 to-slate-100/50">
+                        <thead class="bg-slate-50/50">
                             <tr>
-                                <th class="px-8 py-6 font-black text-slate-500 uppercase text-xs tracking-widest border-b-2 border-slate-200">Card ID</th>
-                                <th class="px-8 py-6 font-black text-slate-500 uppercase text-xs tracking-widest border-b-2 border-slate-200">Book Name</th>
-                                <th class="px-8 py-6 font-black text-slate-500 uppercase text-xs tracking-widest border-b-2 border-slate-200">Status</th>
-                                <th class="px-8 py-6 font-black text-slate-500 uppercase text-xs tracking-widest border-b-2 border-slate-200">Date</th>
-                                <th class="px-8 py-6 font-black text-slate-500 uppercase text-xs tracking-widest border-b-2 border-slate-200">Time</th>
+                                <th class="px-8 py-6 font-black text-slate-400 uppercase text-xs tracking-widest text-left">Card ID</th>
+                                <th class="px-8 py-6 font-black text-slate-400 uppercase text-xs tracking-widest text-left">Book</th>
+                                <th class="px-8 py-6 font-black text-slate-400 uppercase text-xs tracking-widest text-left">Action</th>
+                                <th class="px-8 py-6 font-black text-slate-400 uppercase text-xs tracking-widest text-left">Date</th>
+                                <th class="px-8 py-6 font-black text-slate-400 uppercase text-xs tracking-widest text-left">Time</th>
                             </tr>
                         </thead>
-                        <tbody id="logs-table-body" class="divide-y divide-slate-100/50 text-slate-700"></tbody>
+                        <tbody id="logs-table-body" class="divide-y divide-slate-100"></tbody>
                     </table>
                 </div>
             </div>
@@ -217,6 +140,7 @@
 
     <script>
         const API_BASE = window.location.origin;
+        let isSystemLocked = true;
 
         async function fetchData() {
             try {
@@ -228,77 +152,86 @@
                 const logs = await logsRes.json();
                 const statusData = await statusRes.json();
                 
+                isSystemLocked = !statusData.isSystemActive;
+                
+                // التحكم في شاشة القفل
+                const lockScreen = document.getElementById('lock-screen');
+                if (isSystemLocked) {
+                    lockScreen.classList.remove('hidden');
+                    showPage('home'); // إرجاع المستخدم للهوم لو كان في الداشبورد والسيستم اتقفل
+                } else {
+                    lockScreen.classList.add('hidden');
+                }
+
                 updateUI(logs);
                 updateSystemStatus(statusData.isSystemActive);
             } catch (err) {
-                console.error("Sync Error");
+                console.error("Connection lost...");
             }
         }
 
         function updateUI(logs) {
-            const dataRows = logs.slice(1); // تجاهل الهيدر
+            if (logs.length < 1) return;
+            const dataRows = logs.slice(1);
             const tbody = document.getElementById('logs-table-body');
             tbody.innerHTML = '';
 
             let currentBorrowed = 0;
-            // ترتيب البيانات بحيث الأحدث يظهر فوق
             const displayRows = [...dataRows].reverse();
 
-            // حساب العداد المنطقي (Borrowed يزيد، Returned ينقص)
             dataRows.forEach(row => {
                 const status = row[2];
-                if (status === 'Borrowed') currentBorrowed++;
-                if (status === 'Returned' && currentBorrowed > 0) currentBorrowed--;
+                if (status.includes('Borrowed')) currentBorrowed++;
+                if (status.includes('Returned') && currentBorrowed > 0) currentBorrowed--;
             });
 
             displayRows.forEach((row) => {
                 const [id, name, status, date, time] = row;
+                if (id === "34FA78A3") return; // تجاهل صفوف الأدمن في جدول الكتب
+                
                 const tr = document.createElement('tr');
-                tr.className = "table-row-hover h-16";
+                tr.className = "table-row-hover h-20";
                 tr.innerHTML = `
-                    <td class="px-8 py-6 font-mono text-lg font-semibold text-blue-600 border-r border-slate-100">${id}</td>
-                    <td class="px-8 py-6 font-semibold text-xl text-slate-800 border-r border-slate-100 max-w-md truncate">${name}</td>
-                    <td class="px-8 py-6 border-r border-slate-100">
-                        <span class="status-badge px-6 py-3 rounded-2xl text-sm font-black uppercase tracking-widest shadow-lg ${status === 'Borrowed' ? 'bg-gradient-to-r from-orange-400 to-orange-500 text-white' : status === 'Returned' ? 'bg-gradient-to-r from-emerald-400 to-teal-500 text-white' : 'bg-gradient-to-r from-blue-400 to-indigo-500 text-white'}">
+                    <td class="px-8 py-6 font-mono text-sm font-bold text-indigo-600">${id}</td>
+                    <td class="px-8 py-6 font-bold text-slate-800">${name}</td>
+                    <td class="px-8 py-6">
+                        <span class="px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm ${status.includes('Borrowed') ? 'bg-orange-100 text-orange-600' : 'bg-emerald-100 text-emerald-600'}">
                             ${status}
                         </span>
                     </td>
-                    <td class="px-8 py-6 text-slate-500 text-lg font-medium border-r border-slate-100">${date}</td>
-                    <td class="px-8 py-6 text-slate-500 text-lg font-medium">${time}</td>
+                    <td class="px-8 py-6 text-slate-400 text-sm font-medium">${date}</td>
+                    <td class="px-8 py-6 text-slate-400 text-sm font-medium">${time}</td>
                 `;
                 tbody.appendChild(tr);
             });
 
             document.getElementById('borrowed-count').innerText = currentBorrowed;
-            document.getElementById('total-scans-label').innerText = `${dataRows.length} Total Records`;
-            
-            // تحديث وقت أخر عملية في الكارت
-            if (displayRows.length > 0) {
-                document.getElementById('last-update-time').innerText = displayRows[0][4];
-            }
+            document.getElementById('total-scans-label').innerText = `${dataRows.length} Records Found`;
+            if (displayRows.length > 0) document.getElementById('last-update-time').innerText = displayRows[0][4];
         }
 
         function updateSystemStatus(isActive) {
             const systemText = document.getElementById('system-text');
-            const cardBg = document.getElementById('status-card-bg');
             const icon = document.getElementById('status-icon');
+            const card = document.getElementById('status-card-bg');
 
             if (isActive) {
-                systemText.innerHTML = "System <span class='text-emerald-600'>ACTIVE</span>";
-                systemText.className = "text-4xl lg:text-5xl font-black leading-tight";
-                icon.innerHTML = '<i class="fas fa-check-circle text-3xl"></i>';
+                systemText.innerHTML = "System <span class='text-emerald-500'>ACTIVE</span>";
+                icon.innerHTML = '<i class="fas fa-check-circle"></i>';
                 icon.className = "w-24 h-24 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl flex items-center justify-center text-white text-3xl shadow-2xl flex-shrink-0";
-                cardBg.classList.add('border-emerald-200/50');
+                card.style.borderColor = "rgba(16, 185, 129, 0.2)";
             } else {
-                systemText.innerHTML = "System <span class='text-red-600'>LOCKED</span>";
-                systemText.className = "text-4xl lg:text-5xl font-black leading-tight";
-                icon.innerHTML = '<i class="fas fa-lock text-3xl"></i>';
+                systemText.innerHTML = "System <span class='text-red-500'>LOCKED</span>";
+                icon.innerHTML = '<i class="fas fa-lock"></i>';
                 icon.className = "w-24 h-24 bg-gradient-to-br from-red-500 to-rose-600 rounded-3xl flex items-center justify-center text-white text-3xl shadow-2xl flex-shrink-0";
-                cardBg.classList.add('border-red-200/50');
+                card.style.borderColor = "rgba(239, 68, 68, 0.2)";
             }
         }
 
         function showPage(page) {
+            if (page === 'dashboard' && isSystemLocked) {
+                return; // منع الانتقال لو مقفول
+            }
             document.getElementById('home-page').classList.toggle('hidden', page !== 'home');
             document.getElementById('dashboard-page').classList.toggle('hidden', page !== 'dashboard');
             document.getElementById('home-btn').classList.toggle('active', page === 'home');
