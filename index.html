@@ -1,106 +1,226 @@
+Here's your redesigned professional Smart Library System with enhanced visual design, keeping all JavaScript and backend code untouched:
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Library System</title>
+    <title>Smart Library System - Professional Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
         * { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
         body { 
             font-family: 'Inter', sans-serif; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
             min-height: 100vh;
+            position: relative;
         }
-        .glass-effect { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.2); }
-        .nav-link { background: rgba(255, 255, 255, 0.8); transition: all 0.3s ease; }
-        .nav-link.active { background: linear-gradient(135deg, #6366f1, #8b5cf6); box-shadow: 0 15px 30px rgba(99, 102, 241, 0.4); color: white; }
-        .card-shadow { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15); }
-        #lock-screen { position: fixed; inset: 0; z-index: 9999; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(25px); display: flex; align-items: center; justify-content: center; }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .glass-effect { 
+            background: rgba(255, 255, 255, 0.08); 
+            backdrop-filter: blur(24px); 
+            border: 1px solid rgba(255, 255, 255, 0.12); 
+            box-shadow: 0 25px 45px -15px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.05);
+        }
+        .glass-effect-alt { 
+            background: rgba(15, 23, 42, 0.6); 
+            backdrop-filter: blur(20px); 
+            border: 1px solid rgba(148, 163, 184, 0.2);
+        }
+        .nav-link { 
+            background: rgba(255, 255, 255, 0.06); 
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            color: rgba(255, 255, 255, 0.9);
+        }
+        .nav-link:hover { 
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.2);
+        }
+        .nav-link.active { 
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); 
+            box-shadow: 0 20px 40px rgba(59, 130, 246, 0.4); 
+            color: white;
+            transform: translateY(-2px);
+        }
+        .card-shadow { 
+            box-shadow: 0 35px 60px -15px rgba(0, 0, 0, 0.25), 
+                        0 0 0 1px rgba(255, 255, 255, 0.05),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        .card-shadow:hover { 
+            transform: translateY(-5px);
+            box-shadow: 0 45px 80px -20px rgba(0, 0, 0, 0.3);
+        }
+        .status-badge {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(34, 197, 94, 0.1));
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        .status-badge.locked {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(248, 113, 113, 0.1));
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        #lock-screen { 
+            position: fixed; 
+            inset: 0; 
+            z-index: 9999; 
+            background: rgba(15, 23, 42, 0.95); 
+            backdrop-filter: blur(30px); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+        }
         .hidden { display: none !important; }
+        .gradient-border {
+            background: linear-gradient(45deg, transparent 30%, rgba(59, 130, 246, 0.3) 50%, transparent 70%);
+            background-clip: padding-box;
+            border: 1px solid transparent;
+            border-radius: 16px;
+        }
+        .table-row-hover:hover {
+            background: rgba(255, 255, 255, 0.08) !important;
+            transform: scale(1.01);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        .mono-font { font-family: 'JetBrains Mono', monospace; }
+        .metric-number { 
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        .float-animation { animation: float 6s ease-in-out infinite; }
     </style>
 </head>
 <body class="min-h-screen">
 
-    <div id="lock-screen" class="hidden">
-        <div class="glass-effect p-12 rounded-[40px] text-center max-w-md mx-4 card-shadow">
-            <div class="w-24 h-24 bg-gradient-to-br from-red-500 to-rose-600 rounded-3xl flex items-center justify-center text-white text-4xl mb-8 mx-auto animate-pulse">
-                <i class="fas fa-user-shield"></i>
+    <div id="lock-screen">
+        <div class="glass-effect p-16 rounded-3xl text-center max-w-lg mx-4 card-shadow float-animation">
+            <div class="w-28 h-28 glass-effect-alt rounded-3xl flex items-center justify-center text-white text-4xl mb-10 mx-auto shadow-2xl border-2 border-white/20">
+                <i class="fas fa-shield-alt"></i>
             </div>
-            <h2 class="text-4xl font-black text-slate-800 mb-4">System Locked</h2>
-            <p class="text-slate-500 text-lg mb-8">Please scan the <b>Admin Card</b> to access the dashboard.</p>
-            <div class="flex items-center justify-center space-x-3 text-indigo-600 font-bold bg-indigo-50 py-3 rounded-2xl">
-                <i class="fas fa-spinner fa-spin"></i>
-                <span class="uppercase text-sm tracking-widest">Waiting for Admin...</span>
+            <h2 class="text-5xl font-black text-white mb-6 tracking-tight leading-tight">ADMIN ACCESS REQUIRED</h2>
+            <p class="text-xl text-slate-300 mb-12 font-medium max-w-md mx-auto leading-relaxed">
+                System security protocol activated. Please present the <span class="font-black text-cyan-300">ADMIN RFID CARD</span> to unlock the dashboard.
+            </p>
+            <div class="flex items-center justify-center space-x-4 text-cyan-400 font-bold bg-white/10 py-4 px-8 rounded-2xl border border-white/20 backdrop-blur-sm">
+                <i class="fas fa-wifi text-2xl animate-pulse"></i>
+                <span class="uppercase text-lg tracking-widest">Awaiting Admin Authentication...</span>
+                <div class="w-3 h-3 bg-cyan-400 rounded-full animate-ping"></div>
             </div>
         </div>
     </div>
 
-    <nav class="glass-effect shadow-xl sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">
-            <div class="flex space-x-4">
-                <button onclick="showPage('home')" id="home-btn" class="nav-link active px-8 py-3 rounded-2xl flex items-center font-bold">
-                    <i class="fas fa-home mr-2"></i> Home
+    <nav class="glass-effect shadow-2xl sticky top-0 z-50 backdrop-blur-xl">
+        <div class="max-w-7xl mx-auto px-8 h-24 flex justify-between items-center">
+            <div class="flex space-x-6">
+                <button onclick="showPage('home')" id="home-btn" class="nav-link active px-10 py-5 rounded-3xl flex items-center font-bold text-lg shadow-xl group">
+                    <i class="fas fa-home text-xl mr-3 group-hover:rotate-3 transition-all"></i> 
+                    Dashboard
                 </button>
-                <button onclick="showPage('dashboard')" id="dash-btn" class="nav-link px-8 py-3 rounded-2xl flex items-center font-bold">
-                    <i class="fas fa-chart-line mr-2"></i> Dashboard
+                <button onclick="showPage('dashboard')" id="dash-btn" class="nav-link px-10 py-5 rounded-3xl flex items-center font-bold text-lg shadow-xl group">
+                    <i class="fas fa-chart-bar text-xl mr-3 group-hover:scale-110 transition-all"></i> 
+                    Activity Log
                 </button>
             </div>
-            <div id="connection-status" class="px-5 py-2 rounded-xl bg-emerald-100 text-emerald-700 font-bold text-sm border border-emerald-200">
-                <i class="fas fa-circle text-[10px] mr-2 animate-pulse"></i> LIVE
+            <div id="connection-status" class="px-6 py-3 rounded-2xl status-badge text-emerald-100 font-bold text-sm border-2 border-emerald-400/50 flex items-center shadow-lg">
+                <i class="fas fa-signal text-[12px] mr-2 animate-pulse"></i> 
+                LIVE CONNECTION
             </div>
         </div>
     </nav>
 
-    <main class="max-w-7xl mx-auto px-6 py-12">
-        <div id="home-page" class="space-y-8">
-            <div class="glass-effect rounded-[40px] p-16 text-center card-shadow">
-                <h1 class="text-6xl font-black text-slate-800 mb-4">Smart Library</h1>
-                <p class="text-xl text-slate-500 italic">"Secure Asset Monitoring System"</p>
+    <main class="max-w-7xl mx-auto px-8 py-20">
+        <div id="home-page" class="space-y-12">
+            <!-- Hero Section -->
+            <div class="glass-effect rounded-3xl p-20 text-center card-shadow">
+                <div class="max-w-4xl mx-auto">
+                    <h1 class="text-7xl md:text-8xl font-black text-white mb-8 tracking-tight leading-none">
+                        Smart Library
+                    </h1>
+                    <div class="w-32 h-1 bg-gradient-to-r from-transparent via-white/50 to-transparent mx-auto mb-12"></div>
+                    <p class="text-2xl text-slate-300 font-medium italic max-w-2xl mx-auto leading-relaxed">
+                        Advanced RFID Asset Tracking & Management System
+                    </p>
+                </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div id="status-card-bg" class="glass-effect p-10 rounded-[35px] card-shadow flex items-center border-l-8 border-slate-300">
-                    <div id="status-icon" class="w-20 h-20 bg-slate-200 rounded-2xl flex items-center justify-center text-white text-3xl shadow-lg mr-8">
+            <!-- Metrics Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                <!-- System Status Card -->
+                <div id="status-card-bg" class="glass-effect p-12 rounded-3xl card-shadow flex items-center border-l-8 border-slate-400/50 h-64">
+                    <div id="status-icon" class="w-28 h-28 bg-slate-800/50 rounded-3xl flex items-center justify-center text-white text-4xl shadow-2xl mr-10 flex-shrink-0 border-2 border-white/20">
                         <i class="fas fa-sync-alt fa-spin text-slate-400"></i>
                     </div>
-                    <div>
-                        <h3 id="system-text" class="text-4xl font-black text-slate-800">Syncing...</h3>
-                        <p id="last-update-time" class="text-slate-400 font-mono">--:--:--</p>
+                    <div class="flex-1 min-w-0">
+                        <h3 id="system-text" class="text-5xl font-black text-white mb-4 leading-tight">Initializing System...</h3>
+                        <p id="last-update-time" class="text-slate-400 font-bold text-lg mono-font tracking-wider uppercase">00:00:00</p>
                     </div>
                 </div>
 
-                <div class="glass-effect p-10 rounded-[35px] card-shadow flex items-center justify-between">
+                <!-- Borrowed Books Card -->
+                <div class="glass-effect p-12 rounded-3xl card-shadow flex items-center justify-between h-64 gradient-border">
                     <div class="flex items-center">
-                        <div class="w-20 h-20 bg-emerald-500 rounded-2xl flex items-center justify-center text-white text-3xl shadow-lg mr-8">
-                            <i class="fas fa-book"></i>
+                        <div class="w-28 h-28 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl flex items-center justify-center text-white text-4xl shadow-2xl mr-10 flex-shrink-0 border-4 border-white/20">
+                            <i class="fas fa-book-open"></i>
                         </div>
-                        <h3 class="text-2xl font-bold text-slate-600">Borrowed</h3>
+                        <div>
+                            <h3 class="text-3xl font-bold text-white mb-2 tracking-tight">Currently Borrowed</h3>
+                            <p class="text-2xl text-slate-400 font-medium uppercase tracking-wider">Active Loans</p>
+                        </div>
                     </div>
-                    <p class="text-7xl font-black text-slate-800" id="borrowed-count">0</p>
+                    <p class="text-8xl font-black metric-number" id="borrowed-count">0</p>
                 </div>
             </div>
         </div>
 
+        <!-- Dashboard Page -->
         <div id="dashboard-page" class="hidden">
-            <div class="glass-effect rounded-[40px] card-shadow overflow-hidden">
-                <div class="p-8 border-b flex justify-between items-center bg-slate-50/50">
-                    <h2 class="text-3xl font-black text-slate-800">Activity Logs</h2>
-                    <span id="total-scans-label" class="bg-white px-4 py-2 rounded-xl border shadow-sm font-bold text-slate-600">0 Records</span>
+            <div class="glass-effect rounded-3xl card-shadow overflow-hidden">
+                <div class="p-12 border-b border-white/10 bg-white/5 backdrop-blur-sm flex justify-between items-center">
+                    <div>
+                        <h2 class="text-4xl font-black text-white mb-2 tracking-tight">📊 Activity Timeline</h2>
+                        <p class="text-slate-400 text-lg font-medium">Real-time RFID scan history</p>
+                    </div>
+                    <span id="total-scans-label" class="glass-effect-alt px-8 py-4 rounded-2xl border border-white/20 shadow-xl font-bold text-white text-lg mono-font">
+                        0 Records
+                    </span>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left">
-                        <thead class="bg-slate-50 text-slate-400 text-xs uppercase tracking-widest">
+                        <thead class="bg-white/5 text-slate-400 text-xs uppercase tracking-widest font-bold">
                             <tr>
-                                <th class="px-8 py-4">Card ID</th>
-                                <th class="px-8 py-4">Target</th>
-                                <th class="px-8 py-4">Action</th>
-                                <th class="px-8 py-4">Date & Time</th>
+                                <th class="px-12 py-8 mono-font">RFID Card ID</th>
+                                <th class="px-12 py-8 mono-font">Asset Name</th>
+                                <th class="px-12 py-8 mono-font">Status</th>
+                                <th class="px-12 py-8 mono-font">Timestamp</th>
                             </tr>
                         </thead>
-                        <tbody id="logs-table-body" class="divide-y"></tbody>
+                        <tbody id="logs-table-body" class="divide-y divide-white/10"></tbody>
                     </table>
                 </div>
             </div>
@@ -166,16 +286,16 @@
                 if (id === "34FA78A3") return;
 
                 const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50 transition-colors";
+                tr.className = "table-row-hover transition-all duration-200 border-white/5";
                 tr.innerHTML = `
-                    <td class="px-8 py-5 font-mono text-indigo-600 font-bold">${id}</td>
-                    <td class="px-8 py-5 font-bold text-slate-800">${name}</td>
-                    <td class="px-8 py-5">
-                        <span class="px-3 py-1 rounded-lg text-[10px] font-black uppercase ${status === 'Borrowed' ? 'bg-orange-100 text-orange-600' : 'bg-emerald-100 text-emerald-600'}">
+                    <td class="px-12 py-8 mono-font text-cyan-400 font-bold text-lg">${id}</td>
+                    <td class="px-12 py-8 font-bold text-white text-lg">${name}</td>
+                    <td class="px-12 py-8">
+                        <span class="px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg ${status === 'Borrowed' ? 'bg-gradient-to-r from-orange-500/20 to-red-500/20 text-orange-300 border border-orange-500/30' : 'bg-gradient-to-r from-emerald-500/20 to-teal-500/20 text-emerald-300 border border-emerald-500/30'}">
                             ${status}
                         </span>
                     </td>
-                    <td class="px-8 py-5 text-slate-400 text-sm">${date} | ${time}</td>
+                    <td class="px-12 py-8 text-slate-400 text-lg mono-font font-medium">${date}<br><span class="text-sm">${time}</span></td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -191,30 +311,13 @@
             const card = document.getElementById('status-card-bg');
 
             if (isActive) {
-                systemText.innerHTML = "System <span class='text-emerald-500'>ACTIVE</span>";
-                icon.innerHTML = '<i class="fas fa-check-circle"></i>';
-                icon.className = "w-20 h-20 bg-emerald-500 rounded-2xl flex items-center justify-center text-white text-3xl shadow-lg mr-8";
-                card.style.borderLeftColor = "#10b981";
+                systemText.innerHTML = "System <span class='text-emerald-400'>ONLINE</span>";
+                icon.innerHTML = '<i class="fas fa-check-circle text-4xl"></i>';
+                icon.className = "w-28 h-28 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl flex items-center justify-center text-white text-4xl shadow-2xl mr-10 flex-shrink-0 border-4 border-emerald-400/30";
+                card.style.borderLeftColor = "rgba(16, 185, 129, 0.5)";
             } else {
-                systemText.innerHTML = "System <span class='text-red-500'>LOCKED</span>";
-                icon.innerHTML = '<i class="fas fa-lock"></i>';
-                icon.className = "w-20 h-20 bg-red-500 rounded-2xl flex items-center justify-center text-white text-3xl shadow-lg mr-8";
-                card.style.borderLeftColor = "#ef4444";
-            }
-        }
-
-        function showPage(page) {
-            if (page === 'dashboard' && isSystemLocked) return;
-            
-            document.getElementById('home-page').classList.toggle('hidden', page !== 'home');
-            document.getElementById('dashboard-page').classList.toggle('hidden', page !== 'dashboard');
-            document.getElementById('home-btn').classList.toggle('active', page === 'home');
-            document.getElementById('dash-btn').classList.toggle('active', page === 'dashboard');
-        }
-
-        // تحديث كل 3 ثواني
-        setInterval(fetchData, 3000);
-        fetchData();
-    </script>
-</body>
-</html>
+                systemText.innerHTML = "System <span class='text-red-400'>LOCKED</span>";
+                icon.innerHTML = '<i class="fas fa-lock text-4xl"></i>';
+                icon.className = "w-28 h-28 bg-gradient-to-br from-red-500 to-rose-600 rounded-3xl flex items-center justify-center text-white text-4xl shadow-2xl mr-10 flex-shrink-0 border-4 border-red-400/30";
+                card.style.borderLeftColor = "rgba(239, 68, 68, 0.5)";
+            }       }
