@@ -12,6 +12,7 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+// --- إعدادات النظام والكتب ---
 const ADMIN_CARD = "34FA78A3"; 
 const BOOKS = {
     "AF69101C": "Circuits", 
@@ -19,9 +20,10 @@ const BOOKS = {
     "71D8714C": "Network"
 };
 
-const MY_SHEET_ID = "1hpD4Tgm9qU13_e_L22RxG9SA8cZ9oKQhYYjB9_4BtR0";
+// --- قراءة الـ ID من Vercel بشكل صحيح ---
+const MY_SHEET_ID = process.env.SHEET_ID || "1hpD4Tgm9qU13_e_L22RxG9SA8cZ9oKQhYYjB9_4BtR0";
 
-// --- وظيفة المزامنة: بتجيب حالة السيستم وحالة الكتاب من الشيت ---
+// --- وظيفة جلب الحالة من الشيت ---
 async function getStatusFromSheet(targetTagId = null) {
     try {
         const auth = new google.auth.GoogleAuth({
@@ -31,19 +33,17 @@ async function getStatusFromSheet(targetTagId = null) {
         const sheets = google.sheets({ version: 'v4', auth });
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId: MY_SHEET_ID,
-            range: 'Sheet1!A:C', // بنقرأ الـ ID (A) والحالة (C)
+            range: 'Sheet1!A:C', 
         });
         const rows = response.data.values || [];
         
-        // 1. جلب حالة السيستم العامة (آخر سطر فيه Admin Control)
         let systemActive = false;
         const adminRows = rows.filter(r => r[0] === ADMIN_CARD);
         if (adminRows.length > 0) {
             systemActive = (adminRows[adminRows.length - 1][2] === "System ACTIVE");
         }
 
-        // 2. جلب آخر حالة للكتاب المحدد (لو مطلوب)
-        let lastBookStatus = "Returned"; // الوضع الافتراضي إنه موجود في المكتبة
+        let lastBookStatus = "Returned"; 
         if (targetTagId) {
             const bookRows = rows.filter(r => r[0] === targetTagId);
             if (bookRows.length > 0) {
@@ -64,6 +64,7 @@ async function logToSheet(tagId, bookName, status) {
         if (credentials.private_key) credentials.private_key = credentials.private_key.replace(/\\n/g, '\n');
         const auth = new google.auth.GoogleAuth({ credentials, scopes: ['https://www.googleapis.com/auth/spreadsheets'] });
         const sheets = google.sheets({ version: 'v4', auth });
+        
         const now = new Date();
         const dateStr = now.toLocaleDateString("en-GB", { timeZone: "Africa/Cairo" });
         const timeStr = now.toLocaleTimeString("en-GB", { timeZone: "Africa/Cairo" });
@@ -84,10 +85,8 @@ app.get('/api/status', async (req, res) => {
 
 app.post('/api/scan', async (req, res) => {
     const { tagId } = req.body;
-    // بنسأل الشيت عن حالة السيستم وحالة الكتاب ده بالذات
     const { systemActive, lastBookStatus } = await getStatusFromSheet(tagId);
 
-    // أ- كارت الأدمن
     if (tagId === ADMIN_CARD) {
         const newStatus = !systemActive;
         const adminMsg = newStatus ? "System ACTIVE" : "System LOCKED";
@@ -95,24 +94,35 @@ app.post('/api/scan', async (req, res) => {
         return res.json({ status: adminMsg });
     }
 
-    // ب- لو السيستم مقفول
     if (!systemActive) {
         return res.json({ status: "Access Denied" });
     }
 
-    // ج- كارت كتاب معروف
     if (BOOKS[tagId]) {
         const bookName = BOOKS[tagId];
-        // تبديل الحالة بناءً على اللي كان متسجل في الشيت
         const newState = (lastBookStatus === "Borrowed") ? "Returned" : "Borrowed";
-        
         await logToSheet(tagId, bookName, newState);
-        
-        // الرد اللي هيروح للـ ESP32 عشان تعرضه (زي ما هي متعودة)
         return res.json({ status: `${bookName}:${newState === "Borrowed" ? "BRW" : "RTN"}` });
     }
 
     return res.json({ status: "Unknown Card" });
+});
+
+app.get('/api/logs', async (req, res) => {
+    try {
+        const auth = new google.auth.GoogleAuth({
+            credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT),
+            scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+        });
+        const sheets = google.sheets({ version: 'v4', auth });
+        const response = await sheets.spreadsheets.values.get({
+            spreadsheetId: MY_SHEET_ID,
+            range: 'Sheet1!A:E',
+        });
+        res.json(response.data.values || []);
+    } catch (e) {
+        res.json([]);
+    }
 });
 
 const PORT = process.env.PORT || 3000;
