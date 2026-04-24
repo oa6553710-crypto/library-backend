@@ -143,32 +143,32 @@
         let isSystemLocked = true;
 
         async function fetchData() {
-            try {
-                const [logsRes, statusRes] = await Promise.all([
-                    fetch(`${API_BASE}/api/logs`),
-                    fetch(`${API_BASE}/api/status`)
-                ]);
-                
-                const logs = await logsRes.json();
-                const statusData = await statusRes.json();
-                
-                isSystemLocked = !statusData.isSystemActive;
-                
-                // التحكم في شاشة القفل
-                const lockScreen = document.getElementById('lock-screen');
-                if (isSystemLocked) {
-                    lockScreen.classList.remove('hidden');
-                    showPage('home'); // إرجاع المستخدم للهوم لو كان في الداشبورد والسيستم اتقفل
-                } else {
-                    lockScreen.classList.add('hidden');
-                }
-
-                updateUI(logs);
-                updateSystemStatus(statusData.isSystemActive);
-            } catch (err) {
-                console.error("Connection lost...");
-            }
+    try {
+        const [logsRes, statusRes] = await Promise.all([
+            fetch(`${API_BASE}/api/logs`),
+            fetch(`${API_BASE}/api/status`)
+        ]);
+        
+        const logs = await logsRes.json();
+        const statusData = await statusRes.json();
+        
+        // تعديل مهم: التأكد من القيمة Boolean فعلاً
+        isSystemLocked = (statusData.isSystemActive === false || statusData.isSystemActive === "false");
+        
+        const lockScreen = document.getElementById('lock-screen');
+        if (isSystemLocked) {
+            lockScreen.classList.remove('hidden');
+            showPage('home');
+        } else {
+            lockScreen.classList.add('hidden');
         }
+
+        updateUI(logs);
+        updateSystemStatus(!isSystemLocked); // نبعت الحالة عكس الـ Locked
+    } catch (err) {
+        console.error("Connection error or JSON parse error");
+    }
+}
 
         function updateUI(logs) {
             if (logs.length < 1) return;
@@ -211,22 +211,22 @@
         }
 
         function updateSystemStatus(isActive) {
-            const systemText = document.getElementById('system-text');
-            const icon = document.getElementById('status-icon');
-            const card = document.getElementById('status-card-bg');
+    const systemText = document.getElementById('system-text');
+    const icon = document.getElementById('status-icon');
+    const card = document.getElementById('status-card-bg');
 
-            if (isActive) {
-                systemText.innerHTML = "System <span class='text-emerald-500'>ACTIVE</span>";
-                icon.innerHTML = '<i class="fas fa-check-circle"></i>';
-                icon.className = "w-24 h-24 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl flex items-center justify-center text-white text-3xl shadow-2xl flex-shrink-0";
-                card.style.borderColor = "rgba(16, 185, 129, 0.2)";
-            } else {
-                systemText.innerHTML = "System <span class='text-red-500'>LOCKED</span>";
-                icon.innerHTML = '<i class="fas fa-lock"></i>';
-                icon.className = "w-24 h-24 bg-gradient-to-br from-red-500 to-rose-600 rounded-3xl flex items-center justify-center text-white text-3xl shadow-2xl flex-shrink-0";
-                card.style.borderColor = "rgba(239, 68, 68, 0.2)";
-            }
-        }
+    if (isActive) {
+        systemText.innerHTML = "System <span class='text-emerald-500'>ACTIVE</span>";
+        icon.innerHTML = '<i class="fas fa-check-circle"></i>';
+        icon.className = "w-24 h-24 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl flex items-center justify-center text-white text-3xl shadow-2xl flex-shrink-0";
+        card.style.borderColor = "rgba(16, 185, 129, 0.4)"; // وضحنا اللون شوية
+    } else {
+        systemText.innerHTML = "System <span class='text-red-500'>LOCKED</span>";
+        icon.innerHTML = '<i class="fas fa-lock"></i>';
+        icon.className = "w-24 h-24 bg-gradient-to-br from-red-500 to-rose-600 rounded-3xl flex items-center justify-center text-white text-3xl shadow-2xl flex-shrink-0";
+        card.style.borderColor = "rgba(239, 68, 68, 0.4)";
+    }
+}
 
         function showPage(page) {
             if (page === 'dashboard' && isSystemLocked) {
