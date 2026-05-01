@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smart Library System - Professional Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Add MQTT Library -->
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
@@ -218,34 +220,52 @@
     </main>
 
     <script>
-        const API_BASE = "https://library-backend-an3h.vercel.app"; 
+        // --- NEW MQTT SETUP ---
+        const BROKER_URL = 'ws://your-broker-ip:8888'; // REPLACE WITH YOUR SERVER IP
+        const client = mqtt.connect(BROKER_URL);
+        const API_HISTORY_URL = "https://library-backend-an3h.vercel.app/api/logs"; 
+
         let isSystemLocked = true;
 
-        async function fetchData() {
-            try {
-                const [logsRes, statusRes] = await Promise.all([
-                    fetch(`${API_BASE}/api/logs`),
-                    fetch(`${API_BASE}/api/status`)
-                ]);
-                
-                const logs = await logsRes.json();
-                const statusData = await statusRes.json();
-                
-                const lockScreen = document.getElementById('lock-screen');
-                isSystemLocked = (statusData.isSystemActive !== true);
+        client.on('connect', () => {
+            console.log("Connected to MQTT Broker via WebSocket");
+            client.subscribe('library/ui');
+            client.subscribe('library/status');
+            // Ask for initial state
+            client.publish('library/request_status', '{}');
+            fetchHistoricalData(); // Load table history once
+        });
 
-                if (statusData.isSystemActive === true) {
+        client.on('message', (topic, message) => {
+            const data = JSON.parse(message.toString());
+
+            if (topic === 'library/status') {
+                const lockScreen = document.getElementById('lock-screen');
+                isSystemLocked = (data.isSystemActive !== true);
+
+                if (data.isSystemActive === true) {
                     lockScreen.classList.add('hidden');
                 } else {
                     lockScreen.classList.remove('hidden');
                     showPage('home'); 
                 }
+                updateSystemStatus(data.isSystemActive);
+            }
 
+            if (topic === 'library/ui') {
+                // When a new scan happens, we refresh the UI logic
+                fetchHistoricalData(); 
+            }
+        });
+
+        // --- Logic Kept from Original ---
+        async function fetchHistoricalData() {
+            try {
+                const response = await fetch(API_HISTORY_URL);
+                const logs = await response.json();
                 updateUI(logs);
-                updateSystemStatus(statusData.isSystemActive);
-                
             } catch (err) {
-                console.error("API Error:", err);
+                console.error("History Sync Error:", err);
             }
         }
 
@@ -329,9 +349,6 @@
                 homeBtn.classList.remove('active');
             }
         }
-
-        setInterval(fetchData, 3000);
-        fetchData();
     </script>
 </body>
 </html>

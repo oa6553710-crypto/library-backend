@@ -1,29 +1,21 @@
-const express = require('express');
+const aedes = require('aedes')();
+const server = require('net').createServer(aedes.handle);
+const httpServer = require('http').createServer();
+const ws = require('websocket-stream');
 const { google } = require('googleapis');
-const cors = require('cors');
-const path = require('path');
-const app = express();
 
-app.use(cors());
-app.use(express.json());
-
-app.use(express.static(path.join(__dirname)));
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-// --- إعدادات النظام والكتب ---
-const ADMIN_CARD = "34FA78A3"; 
+// --- Configuration & Constants ---
+const ADMIN_CARD = "34FA78A3"; // كارت الأدمن الخاص بك
 const BOOKS = {
     "AF69101C": "Circuits", 
     "7135704C": "Math",
     "71D8714C": "Network"
 };
 
-// --- قراءة الـ ID من Vercel بشكل صحيح ---
-const MY_SHEET_ID = process.env.SHEET_ID || "1hpD4Tgm9qU13_e_L22RxG9SA8cZ9oKQhYYjB9_4BtR0";
+// سحب معرف الشيت من متغيرات البيئة في ريلواي
+const MY_SHEET_ID = process.env.SHEET_ID;
 
-// --- وظيفة جلب الحالة من الشيت ---
+// --- Google Sheets Functions ---
 async function getStatusFromSheet(targetTagId = null) {
     try {
         const auth = new google.auth.GoogleAuth({
@@ -39,12 +31,10 @@ async function getStatusFromSheet(targetTagId = null) {
         
         let systemActive = false;
         const adminRows = rows.filter(r => r[0] === ADMIN_CARD);
-        // استبدل الجزء ده جوه دالة getStatusFromSheet في الـ backend
-if (adminRows.length > 0) {
-    const lastStatus = adminRows[adminRows.length - 1][2] || "";
-    // تحويل النص لحروف صغيرة ومسح المسافات عشان نضمن المقارنة
-    systemActive = lastStatus.trim().toUpperCase() === "SYSTEM ACTIVE";
-}
+        if (adminRows.length > 0) {
+            const lastStatus = adminRows[adminRows.length - 1][2] || "";
+            systemActive = lastStatus.trim().toUpperCase() === "SYSTEM ACTIVE";
+        }
 
         let lastBookStatus = "Returned"; 
         if (targetTagId) {
@@ -53,7 +43,6 @@ if (adminRows.length > 0) {
                 lastBookStatus = bookRows[bookRows.length - 1][2];
             }
         }
-
         return { systemActive, lastBookStatus };
     } catch (e) {
         console.error("Sync Error:", e.message);
@@ -64,8 +53,15 @@ if (adminRows.length > 0) {
 async function logToSheet(tagId, bookName, status) {
     try {
         const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
-        if (credentials.private_key) credentials.private_key = credentials.private_key.replace(/\\n/g, '\n');
-        const auth = new google.auth.GoogleAuth({ credentials, scopes: ['https://www.googleapis.com/auth/spreadsheets'] });
+        // إصلاح مشكلة السطور الجديدة في المفتاح الخاص
+        if (credentials.private_key) {
+            credentials.private_key = credentials.private_key.replace(/\\n/g, '\n');
+        }
+        
+        const auth = new google.auth.GoogleAuth({ 
+            credentials, 
+            scopes: ['https://www.googleapis.com/auth/spreadsheets'] 
+        });
         const sheets = google.sheets({ version: 'v4', auth });
         
         const now = new Date();
@@ -78,56 +74,71 @@ async function logToSheet(tagId, bookName, status) {
             valueInputOption: 'USER_ENTERED',
             requestBody: { values: [[tagId, bookName, status, dateStr, timeStr]] },
         });
-    } catch (e) { console.error('Logging Error:', e.message); }
+    } catch (e) { 
+        console.error('Logging Error:', e.message); 
+    }
 }
 
-app.get('/api/status', async (req, res) => {
-    const { systemActive } = await getStatusFromSheet();
-    res.json({ isSystemActive: systemActive });
+// --- MQTT Logic Bridge ---
+aedes.on('publish', async (packet, client) => {
+    if (packet.topic === 'library/scan' && client) {
+        try {
+            const data = JSON.parse(packet.payload.toString());
+            const tagId = data.tagId;
+            
+            const { systemActive, lastBookStatus } = await getStatusFromSheet(tagId);
+            let statusResponse = "";
+
+            if (tagId === ADMIN_CARD) {
+                const newStatus = !systemActive;
+                statusResponse = newStatus ? "System ACTIVE" : "System LOCKED";
+                await logToSheet(tagId, "Admin Control", statusResponse);
+            } else if (!systemActive) {
+                statusResponse = "Access Denied";
+            } else if (BOOKS[tagId]) {
+                const bookName = BOOKS[tagId];
+                const newState = (lastBookStatus === "Borrowed") ? "Returned" : "Borrowed";
+                await logToSheet(tagId, bookName, newState);
+                statusResponse = `${bookName} ${newState === "Borrowed" ? "Borrowed" : "Returned"}`;
+            } else {
+                statusResponse = "Unknown Card";
+            }
+
+            // إرسال النتيجة للـ ESP32 لتظهر على الـ LCD
+            aedes.publish({
+                topic: 'library/lcd',
+                payload: JSON.stringify({ status: statusResponse }),
+                qos: 0, retain: false
+            });
+
+            // إرسال تحديث فوري للموقع الإلكتروني
+            aedes.publish({
+                topic: 'library/ui',
+                payload: JSON.stringify({ 
+                    tagId, 
+                    status: statusResponse, 
+                    time: new Date().toLocaleTimeString("en-GB", { timeZone: "Africa/Cairo" }) 
+                }),
+                qos: 0, retain: false
+            });
+        } catch (err) {
+            console.error("Processing Error:", err.message);
+        }
+    }
 });
 
-app.post('/api/scan', async (req, res) => {
-    const { tagId } = req.body;
-    const { systemActive, lastBookStatus } = await getStatusFromSheet(tagId);
+// --- Server Ports & Startup ---
 
-    if (tagId === ADMIN_CARD) {
-        const newStatus = !systemActive;
-        const adminMsg = newStatus ? "System ACTIVE" : "System LOCKED";
-        await logToSheet(tagId, "Admin Control", adminMsg);
-        return res.json({ status: adminMsg });
-    }
+// البورت الديناميكي لريلواي (للموقع)
+const PORT = process.env.PORT || 8888; 
 
-    if (!systemActive) {
-        return res.json({ status: "Access Denied" });
-    }
-
-    if (BOOKS[tagId]) {
-        const bookName = BOOKS[tagId];
-        const newState = (lastBookStatus === "Borrowed") ? "Returned" : "Borrowed";
-        await logToSheet(tagId, bookName, newState);
-        return res.json({ status: `${bookName} ${newState === "Borrowed" ? "Borrowed" : "Returned"}` });
-    }
-
-    return res.json({ status: "Unknown Card" });
+// تشغيل سيرفر MQTT العادي على بورت 1883 للـ ESP32
+server.listen(1883, () => {
+    console.log(`📡 MQTT Broker is running on port 1883`);
 });
 
-app.get('/api/logs', async (req, res) => {
-    try {
-        const auth = new google.auth.GoogleAuth({
-            credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT),
-            scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-        });
-        const sheets = google.sheets({ version: 'v4', auth });
-        const response = await sheets.spreadsheets.values.get({
-            spreadsheetId: MY_SHEET_ID,
-            range: 'Sheet1!A:E',
-        });
-        res.json(response.data.values || []);
-    } catch (e) {
-        res.json([]);
-    }
+// تشغيل سيرفر WebSockets للموقع
+ws.createServer({ server: httpServer }, aedes.handle);
+httpServer.listen(PORT, () => {
+    console.log(`🌐 WebSocket Broker (UI) is running on port ${PORT}`);
 });
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Backend Ready`));
-module.exports = app;
