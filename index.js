@@ -134,6 +134,43 @@ aedes.on('publish', async (packet, client) => {
         }
     }
 });
+// ضيف الجزء ده في آخر ملف index.js عشان الموقع يعرف يقرأ الـ Google Sheet
+httpServer.on('request', async (req, res) => {
+    // تفعيل الـ CORS عشان المتصفح ميرفضش الطلب
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+    if (req.method === 'OPTIONS') {
+        res.writeHead(204);
+        res.end();
+        return;
+    }
+
+    if (req.url === '/logs') {
+        try {
+            const auth = new google.auth.GoogleAuth({
+                credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT),
+                scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
+            });
+            const sheets = google.sheets({ version: 'v4', auth });
+            const response = await sheets.spreadsheets.values.get({
+                spreadsheetId: MY_SHEET_ID,
+                range: 'Sheet1!A:E', // هيسحب الخمس أعمدة
+            });
+            
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify(response.data.values || []));
+        } catch (err) {
+            console.error("API Error:", err.message);
+            res.writeHead(500);
+            res.end(JSON.stringify({ error: err.message }));
+        }
+    } else {
+        res.writeHead(404);
+        res.end();
+    }
+});
 
 // --- Server Ports ---
 const PORT = process.env.PORT || 8888; 
