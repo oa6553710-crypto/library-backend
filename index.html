@@ -236,27 +236,32 @@
             fetchHistoricalData(); // Load table history once
         });
 
-        client.on('message', (topic, message) => {
-            const data = JSON.parse(message.toString());
+       client.on('message', (topic, message) => {
+    const data = JSON.parse(message.toString());
+    console.log("Received:", topic, data); // عشان تشوف البيانات في الـ Console
 
-            if (topic === 'library/status') {
-                const lockScreen = document.getElementById('lock-screen');
-                isSystemLocked = (data.isSystemActive !== true);
+    // لو الرسالة جاية من توبيك الـ status أو الـ ui وكارت الأدمن هو اللي مبعوث
+    if (topic === 'library/status' || (topic === 'library/ui' && data.tagId === "34FA78A3")) {
+        const lockScreen = document.getElementById('lock-screen');
+        
+        // لو الحالة جاية صريحة أو بنستنتجها من كلمة ACTIVE
+        const isActive = data.isSystemActive ?? data.status?.includes("ACTIVE");
+        
+        isSystemLocked = !isActive;
 
-                if (data.isSystemActive === true) {
-                    lockScreen.classList.add('hidden');
-                } else {
-                    lockScreen.classList.remove('hidden');
-                    showPage('home'); 
-                }
-                updateSystemStatus(data.isSystemActive);
-            }
+        if (isActive) {
+            lockScreen.classList.add('hidden');
+        } else {
+            lockScreen.classList.remove('hidden');
+            showPage('home'); 
+        }
+        updateSystemStatus(isActive);
+    }
 
-            if (topic === 'library/ui') {
-                // When a new scan happens, we refresh the UI logic
-                fetchHistoricalData(); 
-            }
-        });
+    if (topic === 'library/ui') {
+        fetchHistoricalData(); 
+    }
+});
 
         // --- Logic Kept from Original ---
         async function fetchHistoricalData() {

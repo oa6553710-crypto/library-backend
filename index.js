@@ -5,14 +5,13 @@ const ws = require('websocket-stream');
 const { google } = require('googleapis');
 
 // --- Configuration & Constants ---
-const ADMIN_CARD = "34FA78A3"; // كارت الأدمن الخاص بك
+const ADMIN_CARD = "34FA78A3"; 
 const BOOKS = {
     "AF69101C": "Circuits", 
     "7135704C": "Math",
     "71D8714C": "Network"
 };
 
-// سحب معرف الشيت من متغيرات البيئة في ريلواي
 const MY_SHEET_ID = process.env.SHEET_ID;
 
 // --- Google Sheets Functions ---
@@ -53,7 +52,6 @@ async function getStatusFromSheet(targetTagId = null) {
 async function logToSheet(tagId, bookName, status) {
     try {
         const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
-        // إصلاح مشكلة السطور الجديدة في المفتاح الخاص
         if (credentials.private_key) {
             credentials.private_key = credentials.private_key.replace(/\\n/g, '\n');
         }
@@ -88,11 +86,20 @@ aedes.on('publish', async (packet, client) => {
             
             const { systemActive, lastBookStatus } = await getStatusFromSheet(tagId);
             let statusResponse = "";
+            let newSystemState = systemActive;
 
             if (tagId === ADMIN_CARD) {
-                const newStatus = !systemActive;
-                statusResponse = newStatus ? "System ACTIVE" : "System LOCKED";
+                newSystemState = !systemActive;
+                statusResponse = newSystemState ? "System ACTIVE" : "System LOCKED";
                 await logToSheet(tagId, "Admin Control", statusResponse);
+
+                // --- التعديل الجوهري: إرسال حالة القفل للموقع مباشرة ---
+                aedes.publish({
+                    topic: 'library/status',
+                    payload: JSON.stringify({ isSystemActive: newSystemState }),
+                    qos: 0, retain: true
+                });
+
             } else if (!systemActive) {
                 statusResponse = "Access Denied";
             } else if (BOOKS[tagId]) {
@@ -104,19 +111,20 @@ aedes.on('publish', async (packet, client) => {
                 statusResponse = "Unknown Card";
             }
 
-            // إرسال النتيجة للـ ESP32 لتظهر على الـ LCD
+            // إرسال النتيجة للـ ESP32
             aedes.publish({
                 topic: 'library/lcd',
                 payload: JSON.stringify({ status: statusResponse }),
                 qos: 0, retain: false
             });
 
-            // إرسال تحديث فوري للموقع الإلكتروني
+            // إرسال تحديث فوري للموقع
             aedes.publish({
                 topic: 'library/ui',
                 payload: JSON.stringify({ 
                     tagId, 
                     status: statusResponse, 
+                    isSystemActive: newSystemState, // إضافة الحالة هنا برضه للاحتياط
                     time: new Date().toLocaleTimeString("en-GB", { timeZone: "Africa/Cairo" }) 
                 }),
                 qos: 0, retain: false
@@ -127,17 +135,13 @@ aedes.on('publish', async (packet, client) => {
     }
 });
 
-// --- Server Ports & Startup ---
-
-// البورت الديناميكي لريلواي (للموقع)
+// --- Server Ports ---
 const PORT = process.env.PORT || 8888; 
 
-// تشغيل سيرفر MQTT العادي على بورت 1883 للـ ESP32
 server.listen(1883, () => {
     console.log(`📡 MQTT Broker is running on port 1883`);
 });
 
-// تشغيل سيرفر WebSockets للموقع
 ws.createServer({ server: httpServer }, aedes.handle);
 httpServer.listen(PORT, () => {
     console.log(`🌐 WebSocket Broker (UI) is running on port ${PORT}`);
