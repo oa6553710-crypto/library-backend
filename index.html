@@ -265,14 +265,44 @@
 
         // --- Logic Kept from Original ---
         async function fetchHistoricalData() {
-            try {
-                const response = await fetch(API_HISTORY_URL);
-                const logs = await response.json();
-                updateUI(logs);
-            } catch (err) {
-                console.error("History Sync Error:", err);
+    try {
+        const response = await fetch(API_HISTORY_URL);
+        const logs = await response.json();
+        
+        // 1. الجزء المسؤول عن فحص حالة الأدمن أول ما الصفحة تفتح
+        if (Array.isArray(logs) && logs.length > 0) {
+            // بنفلتر السجلات عشان نجيب سجلات كارت الأدمن بس
+            const adminLogs = logs.filter(row => row[0] === "34FA78A3");
+            
+            if (adminLogs.length > 0) {
+                // بنجيب آخر حالة اتسجلت للأدمن (الموجودة في العمود التالت Index 2)
+                const lastAdminEntry = adminLogs[adminLogs.length - 1];
+                const lastStatus = lastAdminEntry[2]; 
+                
+                // لو السجل بيقول إن السيستم كان ACTIVE
+                const isActive = lastStatus.trim().toUpperCase() === "SYSTEM ACTIVE";
+                
+                if (isActive) {
+                    // اخفي الشاشة الزرقاء وافتح السيستم برمجياً
+                    const lockScreen = document.getElementById('lock-screen');
+                    if (lockScreen) lockScreen.classList.add('hidden');
+                    isSystemLocked = false;
+                    updateSystemStatus(true);
+                } else {
+                    // لو كان مقفول اتأكد إن الشاشة الزرقاء ظاهرة
+                    isSystemLocked = true;
+                    updateSystemStatus(false);
+                }
             }
         }
+
+        // 2. تحديث الجدول والعدادات بالبيانات اللي جات
+        updateUI(logs);
+        
+    } catch (err) {
+        console.error("History Sync Error:", err);
+    }
+}
 
         function updateUI(logs) {
             if (!Array.isArray(logs) || logs.length <= 1) return;
