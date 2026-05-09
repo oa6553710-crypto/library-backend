@@ -3,7 +3,7 @@ const http = require('http');
 const WebSocket = require('ws');
 
 const HTTP_PORT = process.env.PORT || 8081;
-const TCP_PORT = process.env.MQTT_PORT ? Number(process.env.MQTT_PORT) : 1884;
+const TCP_PORT = process.env.MQTT_PORT ? Number(process.env.MQTT_PORT) : 1883;
 
 const subscriptions = new Map();
 
