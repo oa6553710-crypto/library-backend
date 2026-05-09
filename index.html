@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,13 +11,19 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
-        * { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
-        body { 
-            font-family: 'Inter', sans-serif; 
+
+        * {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
             background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
             min-height: 100vh;
             position: relative;
         }
+
         body::before {
             content: '';
             position: fixed;
@@ -24,106 +31,138 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background-image: 
+            background-image:
                 radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.15) 0%, transparent 50%),
                 radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.15) 0%, transparent 50%),
                 radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.1) 0%, transparent 50%);
             pointer-events: none;
             z-index: -1;
         }
-        
-        .glass-effect { 
-            background: rgba(255, 255, 255, 0.08); 
-            backdrop-filter: blur(24px); 
-            border: 1px solid rgba(255, 255, 255, 0.12); 
+
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
             box-shadow: 0 25px 45px -15px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.05);
         }
-        .glass-effect-alt { 
-            background: rgba(15, 23, 42, 0.6); 
-            backdrop-filter: blur(20px); 
+
+        .glass-effect-alt {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(20px);
             border: 1px solid rgba(148, 163, 184, 0.2);
         }
-        .nav-link { 
-            background: rgba(255, 255, 255, 0.06); 
+
+        .nav-link {
+            background: rgba(255, 255, 255, 0.06);
             backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.08);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             color: rgba(255, 255, 255, 0.9);
         }
-        .nav-link:hover { 
+
+        .nav-link:hover {
             background: rgba(255, 255, 255, 0.15);
             transform: translateY(-2px) scale(1.05);
             box-shadow: 0 12px 25px rgba(0, 0, 0, 0.2);
         }
-        .nav-link.active { 
-            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); 
-            box-shadow: 0 20px 40px rgba(59, 130, 246, 0.4); 
+
+        .nav-link.active {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            box-shadow: 0 20px 40px rgba(59, 130, 246, 0.4);
             color: white;
             transform: translateY(-2px);
         }
-        .card-shadow { 
-            box-shadow: 0 35px 60px -15px rgba(0, 0, 0, 0.25), 
-                        0 0 0 1px rgba(255, 255, 255, 0.05),
-                        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+
+        .card-shadow {
+            box-shadow: 0 35px 60px -15px rgba(0, 0, 0, 0.25),
+                0 0 0 1px rgba(255, 255, 255, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
             transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .card-shadow:hover { 
+
+        .card-shadow:hover {
             transform: translateY(-10px) scale(1.02);
             box-shadow: 0 45px 80px -20px rgba(0, 0, 0, 0.4);
             background: rgba(255, 255, 255, 0.12);
         }
+
         .status-badge {
             background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(34, 197, 94, 0.1));
             border: 1px solid rgba(16, 185, 129, 0.3);
         }
-        #lock-screen { 
-            position: fixed; 
-            inset: 0; 
-            z-index: 9999; 
-            background: rgba(15, 23, 42, 0.95); 
-            backdrop-filter: blur(30px); 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
+
+        #lock-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(30px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        .hidden { display: none !important; }
+
+        .hidden {
+            display: none !important;
+        }
+
         .gradient-border {
             background: linear-gradient(45deg, transparent 30%, rgba(59, 130, 246, 0.3) 50%, transparent 70%);
             background-clip: padding-box;
             border: 1px solid transparent;
             border-radius: 16px;
         }
+
         .table-row-hover:hover {
             background: rgba(255, 255, 255, 0.08) !important;
             transform: scale(1.01) translateX(5px);
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
         }
-        .mono-font { font-family: 'JetBrains Mono', monospace; }
-        .metric-number { 
+
+        .mono-font {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .metric-number {
             background: linear-gradient(135deg, #3b82f6, #1d4ed8);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
+
         @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
+
+            0%,
+            100% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
         }
-        .float-animation { animation: float 6s ease-in-out infinite; }
+
+        .float-animation {
+            animation: float 6s ease-in-out infinite;
+        }
     </style>
 </head>
+
 <body class="min-h-screen">
 
     <div id="lock-screen">
         <div class="glass-effect p-16 rounded-3xl text-center max-w-lg mx-4 card-shadow float-animation">
-            <div class="w-28 h-28 glass-effect-alt rounded-3xl flex items-center justify-center text-white text-4xl mb-10 mx-auto shadow-2xl border-2 border-white/20">
+            <div
+                class="w-28 h-28 glass-effect-alt rounded-3xl flex items-center justify-center text-white text-4xl mb-10 mx-auto shadow-2xl border-2 border-white/20">
                 <i class="fas fa-shield-alt"></i>
             </div>
             <h2 class="text-5xl font-black text-white mb-6 tracking-tight leading-tight">ADMIN ACCESS REQUIRED</h2>
             <p class="text-xl text-slate-300 mb-12 font-medium max-w-md mx-auto leading-relaxed">
-                System security protocol activated. Please present the <span class="font-black text-cyan-300">ADMIN RFID CARD</span> to unlock the dashboard.
+                System security protocol activated. Please present the <span class="font-black text-cyan-300">ADMIN RFID
+                    CARD</span> to unlock the dashboard.
             </p>
-            <div class="flex items-center justify-center space-x-4 text-cyan-400 font-bold bg-white/10 py-4 px-8 rounded-2xl border border-white/20 backdrop-blur-sm">
+            <div
+                class="flex items-center justify-center space-x-4 text-cyan-400 font-bold bg-white/10 py-4 px-8 rounded-2xl border border-white/20 backdrop-blur-sm">
                 <i class="fas fa-wifi text-2xl animate-pulse"></i>
                 <span class="uppercase text-lg tracking-widest">Awaiting Admin Authentication...</span>
                 <div class="w-3 h-3 bg-cyan-400 rounded-full animate-ping"></div>
@@ -134,17 +173,20 @@
     <nav class="glass-effect shadow-2xl sticky top-0 z-50 backdrop-blur-xl">
         <div class="max-w-7xl mx-auto px-8 h-24 flex justify-between items-center">
             <div class="flex space-x-6">
-                <button onclick="showPage('home')" id="home-btn" class="nav-link active px-10 py-5 rounded-3xl flex items-center font-bold text-lg shadow-xl group">
-                    <i class="fas fa-home text-xl mr-3 group-hover:rotate-3 transition-all"></i> 
+                <button onclick="showPage('home')" id="home-btn"
+                    class="nav-link active px-10 py-5 rounded-3xl flex items-center font-bold text-lg shadow-xl group">
+                    <i class="fas fa-home text-xl mr-3 group-hover:rotate-3 transition-all"></i>
                     Dashboard
                 </button>
-                <button onclick="showPage('dashboard')" id="dash-btn" class="nav-link px-10 py-5 rounded-3xl flex items-center font-bold text-lg shadow-xl group">
-                    <i class="fas fa-chart-bar text-xl mr-3 group-hover:scale-110 transition-all"></i> 
+                <button onclick="showPage('dashboard')" id="dash-btn"
+                    class="nav-link px-10 py-5 rounded-3xl flex items-center font-bold text-lg shadow-xl group">
+                    <i class="fas fa-chart-bar text-xl mr-3 group-hover:scale-110 transition-all"></i>
                     Activity Log
                 </button>
             </div>
-            <div id="connection-status" class="px-6 py-3 rounded-2xl status-badge text-emerald-100 font-bold text-sm border-2 border-emerald-400/50 flex items-center shadow-lg transition-transform hover:scale-105">
-                <i class="fas fa-signal text-[12px] mr-2 animate-pulse"></i> 
+            <div id="connection-status"
+                class="px-6 py-3 rounded-2xl status-badge text-emerald-100 font-bold text-sm border-2 border-emerald-400/50 flex items-center shadow-lg transition-transform hover:scale-105">
+                <i class="fas fa-signal text-[12px] mr-2 animate-pulse"></i>
                 LIVE CONNECTION
             </div>
         </div>
@@ -154,10 +196,12 @@
         <div id="home-page" class="space-y-12">
             <div class="glass-effect rounded-3xl p-20 text-center card-shadow group">
                 <div class="max-w-4xl mx-auto">
-                    <h1 class="text-7xl md:text-8xl font-black text-white mb-8 tracking-tight leading-none group-hover:scale-105 transition-transform duration-500">
+                    <h1
+                        class="text-7xl md:text-8xl font-black text-white mb-8 tracking-tight leading-none group-hover:scale-105 transition-transform duration-500">
                         Smart Library System
                     </h1>
-                    <div class="w-32 h-1 bg-gradient-to-r from-transparent via-white/50 to-transparent mx-auto mb-12"></div>
+                    <div class="w-32 h-1 bg-gradient-to-r from-transparent via-white/50 to-transparent mx-auto mb-12">
+                    </div>
                     <p class="text-2xl text-slate-300 font-medium italic max-w-2xl mx-auto leading-relaxed">
                         Live Tracking
                     </p>
@@ -165,19 +209,25 @@
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                <div id="status-card-bg" class="glass-effect p-12 rounded-3xl card-shadow flex items-center border-l-8 border-slate-400/50 h-64">
-                    <div id="status-icon" class="w-28 h-28 bg-slate-800/50 rounded-3xl flex items-center justify-center text-white text-4xl shadow-2xl mr-10 flex-shrink-0 border-2 border-white/20">
+                <div id="status-card-bg"
+                    class="glass-effect p-12 rounded-3xl card-shadow flex items-center border-l-8 border-slate-400/50 h-64">
+                    <div id="status-icon"
+                        class="w-28 h-28 bg-slate-800/50 rounded-3xl flex items-center justify-center text-white text-4xl shadow-2xl mr-10 flex-shrink-0 border-2 border-white/20">
                         <i class="fas fa-sync-alt fa-spin text-slate-400"></i>
                     </div>
                     <div class="flex-1 min-w-0">
-                        <h3 id="system-text" class="text-5xl font-black text-white mb-4 leading-tight">Initializing System...</h3>
-                        <p id="last-update-time" class="text-slate-400 font-bold text-lg mono-font tracking-wider uppercase">00:00:00</p>
+                        <h3 id="system-text" class="text-5xl font-black text-white mb-4 leading-tight">Initializing
+                            System...</h3>
+                        <p id="last-update-time"
+                            class="text-slate-400 font-bold text-lg mono-font tracking-wider uppercase">00:00:00</p>
                     </div>
                 </div>
 
-                <div class="glass-effect p-12 rounded-3xl card-shadow flex items-center justify-between h-64 gradient-border">
+                <div
+                    class="glass-effect p-12 rounded-3xl card-shadow flex items-center justify-between h-64 gradient-border">
                     <div class="flex items-center">
-                        <div class="w-28 h-28 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl flex items-center justify-center text-white text-4xl shadow-2xl mr-10 flex-shrink-0 border-4 border-white/20">
+                        <div
+                            class="w-28 h-28 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl flex items-center justify-center text-white text-4xl shadow-2xl mr-10 flex-shrink-0 border-4 border-white/20">
                             <i class="fas fa-book-open"></i>
                         </div>
                         <div>
@@ -192,12 +242,14 @@
 
         <div id="dashboard-page" class="hidden">
             <div class="glass-effect rounded-3xl card-shadow overflow-hidden">
-                <div class="p-12 border-b border-white/10 bg-white/5 backdrop-blur-sm flex justify-between items-center">
+                <div
+                    class="p-12 border-b border-white/10 bg-white/5 backdrop-blur-sm flex justify-between items-center">
                     <div>
                         <h2 class="text-4xl font-black text-white mb-2 tracking-tight">📊 Activity Timeline</h2>
                         <p class="text-slate-400 text-lg font-medium">Scan History</p>
                     </div>
-                    <span id="total-scans-label" class="glass-effect-alt px-8 py-4 rounded-2xl border border-white/20 shadow-xl font-bold text-white text-lg mono-font">
+                    <span id="total-scans-label"
+                        class="glass-effect-alt px-8 py-4 rounded-2xl border border-white/20 shadow-xl font-bold text-white text-lg mono-font">
                         0 Records
                     </span>
                 </div>
@@ -221,9 +273,9 @@
 
     <script>
         // --- NEW MQTT SETUP ---
-        const BROKER_URL = 'wss://library-backend-hjf2.onrender.com';
-        const client = mqtt.connect('wss://library-backend-hjf2.onrender.com');
-        const API_HISTORY_URL = "https://library-backend-hjf2.onrender.com/logs"; 
+        const BROKER_URL = 'wss://library-backend-production-6afd.up.railway.app';
+        const client = mqtt.connect('wss://library-backend-production-6afd.up.railway.app');
+        const API_HISTORY_URL = "https://library-backend-production-6afd.up.railway.app/logs";
 
         let isSystemLocked = true;
 
@@ -236,77 +288,77 @@
             fetchHistoricalData(); // Load table history once
         });
 
-       client.on('message', (topic, message) => {
-    const data = JSON.parse(message.toString());
-    console.log("Received:", topic, data); // عشان تشوف البيانات في الـ Console
+        client.on('message', (topic, message) => {
+            const data = JSON.parse(message.toString());
+            console.log("Received:", topic, data); // عشان تشوف البيانات في الـ Console
 
-    // لو الرسالة جاية من توبيك الـ status أو الـ ui وكارت الأدمن هو اللي مبعوث
-    if (topic === 'library/status' || (topic === 'library/ui' && data.tagId === "34FA78A3")) {
-        const lockScreen = document.getElementById('lock-screen');
-        
-        // لو الحالة جاية صريحة أو بنستنتجها من كلمة ACTIVE
-        const isActive = data.isSystemActive ?? data.status?.includes("ACTIVE");
-        
-        isSystemLocked = !isActive;
+            // لو الرسالة جاية من توبيك الـ status أو الـ ui وكارت الأدمن هو اللي مبعوث
+            if (topic === 'library/status' || (topic === 'library/ui' && data.tagId === "34FA78A3")) {
+                const lockScreen = document.getElementById('lock-screen');
 
-        if (isActive) {
-            lockScreen.classList.add('hidden');
-        } else {
-            lockScreen.classList.remove('hidden');
-            showPage('home'); 
-        }
-        updateSystemStatus(isActive);
-    }
+                // لو الحالة جاية صريحة أو بنستنتجها من كلمة ACTIVE
+                const isActive = data.isSystemActive ?? data.status?.includes("ACTIVE");
 
-    if (topic === 'library/ui') {
-        fetchHistoricalData(); 
-    }
-});
+                isSystemLocked = !isActive;
+
+                if (isActive) {
+                    lockScreen.classList.add('hidden');
+                } else {
+                    lockScreen.classList.remove('hidden');
+                    showPage('home');
+                }
+                updateSystemStatus(isActive);
+            }
+
+            if (topic === 'library/ui') {
+                fetchHistoricalData();
+            }
+        });
 
         // --- Logic Kept from Original ---
         async function fetchHistoricalData() {
-    try {
-        const response = await fetch(API_HISTORY_URL);
-        const logs = await response.json();
-        
-        // 1. الجزء المسؤول عن فحص حالة الأدمن أول ما الصفحة تفتح
-        if (Array.isArray(logs) && logs.length > 0) {
-            // بنفلتر السجلات عشان نجيب سجلات كارت الأدمن بس
-            const adminLogs = logs.filter(row => row[0] === "34FA78A3");
-            
-            if (adminLogs.length > 0) {
-                // بنجيب آخر حالة اتسجلت للأدمن (الموجودة في العمود التالت Index 2)
-                const lastAdminEntry = adminLogs[adminLogs.length - 1];
-                const lastStatus = lastAdminEntry[2]; 
-                
-                // لو السجل بيقول إن السيستم كان ACTIVE
-                const isActive = lastStatus.trim().toUpperCase() === "SYSTEM ACTIVE";
-                
-                if (isActive) {
-                    // اخفي الشاشة الزرقاء وافتح السيستم برمجياً
-                    const lockScreen = document.getElementById('lock-screen');
-                    if (lockScreen) lockScreen.classList.add('hidden');
-                    isSystemLocked = false;
-                    updateSystemStatus(true);
-                } else {
-                    // لو كان مقفول اتأكد إن الشاشة الزرقاء ظاهرة
-                    isSystemLocked = true;
-                    updateSystemStatus(false);
+            try {
+                const response = await fetch(API_HISTORY_URL);
+                const logs = await response.json();
+
+                // 1. الجزء المسؤول عن فحص حالة الأدمن أول ما الصفحة تفتح
+                if (Array.isArray(logs) && logs.length > 0) {
+                    // بنفلتر السجلات عشان نجيب سجلات كارت الأدمن بس
+                    const adminLogs = logs.filter(row => row[0] === "34FA78A3");
+
+                    if (adminLogs.length > 0) {
+                        // بنجيب آخر حالة اتسجلت للأدمن (الموجودة في العمود التالت Index 2)
+                        const lastAdminEntry = adminLogs[adminLogs.length - 1];
+                        const lastStatus = lastAdminEntry[2];
+
+                        // لو السجل بيقول إن السيستم كان ACTIVE
+                        const isActive = lastStatus.trim().toUpperCase() === "SYSTEM ACTIVE";
+
+                        if (isActive) {
+                            // اخفي الشاشة الزرقاء وافتح السيستم برمجياً
+                            const lockScreen = document.getElementById('lock-screen');
+                            if (lockScreen) lockScreen.classList.add('hidden');
+                            isSystemLocked = false;
+                            updateSystemStatus(true);
+                        } else {
+                            // لو كان مقفول اتأكد إن الشاشة الزرقاء ظاهرة
+                            isSystemLocked = true;
+                            updateSystemStatus(false);
+                        }
+                    }
                 }
+
+                // 2. تحديث الجدول والعدادات بالبيانات اللي جات
+                updateUI(logs);
+
+            } catch (err) {
+                console.error("History Sync Error:", err);
             }
         }
 
-        // 2. تحديث الجدول والعدادات بالبيانات اللي جات
-        updateUI(logs);
-        
-    } catch (err) {
-        console.error("History Sync Error:", err);
-    }
-}
-
         function updateUI(logs) {
             if (!Array.isArray(logs) || logs.length <= 1) return;
-            
+
             const dataRows = logs.slice(1);
             const tbody = document.getElementById('logs-table-body');
             tbody.innerHTML = '';
@@ -317,7 +369,7 @@
             dataRows.forEach(row => {
                 const [id, name, status] = row;
                 if (id === "34FA78A3") return;
-                
+
                 if (status === "Borrowed") borrowedSet.add(name);
                 if (status === "Returned") borrowedSet.delete(name);
             });
@@ -372,10 +424,10 @@
             const dashBtn = document.getElementById('dash-btn');
 
             if (page === 'dashboard' && isSystemLocked) return;
-            
+
             homePage.classList.toggle('hidden', page !== 'home');
             dashPage.classList.toggle('hidden', page !== 'dashboard');
-            
+
             if (page === 'home') {
                 homeBtn.classList.add('active');
                 dashBtn.classList.remove('active');
@@ -386,4 +438,5 @@
         }
     </script>
 </body>
+
 </html>
