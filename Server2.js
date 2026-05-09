@@ -164,24 +164,36 @@ function handleWsConnection(ws) {
     });
 }
 
-const httpServer = http.createServer((req, res) => {
-    if (req.method === 'GET' && req.url === '/health') {
+if (require.main === module) {
+    const httpServer = http.createServer((req, res) => {
+        if (req.method === 'GET' && req.url === '/health') {
+            res.writeHead(200, { 'Content-Type': 'text/plain' });
+            res.end('OK');
+            return;
+        }
         res.writeHead(200, { 'Content-Type': 'text/plain' });
-        res.end('OK');
-        return;
-    }
-    res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('MQTT Broker');
-});
+        res.end('MQTT Broker');
+    });
 
-const wss = new WebSocket.Server({ server: httpServer });
-wss.on('connection', handleWsConnection);
+    const wss = new WebSocket.Server({ server: httpServer });
+    wss.on('connection', handleWsConnection);
 
-httpServer.listen(HTTP_PORT, () => {
-    console.log(`?? HTTP/WebSocket server running on port ${HTTP_PORT}`);
-});
+    httpServer.listen(HTTP_PORT, () => {
+        console.log(`?? HTTP/WebSocket server running on port ${HTTP_PORT}`);
+    });
 
-const tcpServer = net.createServer(handleTcpConnection);
-tcpServer.listen(TCP_PORT, '0.0.0.0', () => {
-    console.log(`?? TCP MQTT broker running locally on port ${TCP_PORT}`);
-});
+    const tcpServer = net.createServer(handleTcpConnection);
+    tcpServer.listen(TCP_PORT, '0.0.0.0', () => {
+        console.log(`?? TCP MQTT broker running locally on port ${TCP_PORT}`);
+    });
+} else {
+    module.exports = function attachBroker(server) {
+        const wss = new WebSocket.Server({ server });
+        wss.on('connection', handleWsConnection);
+
+        const tcpServer = net.createServer(handleTcpConnection);
+        tcpServer.listen(TCP_PORT, '0.0.0.0', () => {
+            console.log(`?? TCP MQTT broker running inside index.js on port ${TCP_PORT}`);
+        });
+    };
+}

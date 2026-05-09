@@ -178,7 +178,12 @@ app.get('/logs', async (req, res) => {
     }
 });
 
-app.listen(PORT, () => {
+const attachBroker = require('./Server2.js');
+
+const server = app.listen(PORT, () => {
     console.log(`🌐 Backend API running on port ${PORT}`);
     console.log(`🧠 Backend logic listening to MQTT broker at ${MQTT_BROKER_URL}`);
 });
+
+// Attach the WebSocket MQTT broker to the same HTTP server
+attachBroker(server);
