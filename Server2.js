@@ -1,244 +1,187 @@
 const net = require('net');
+const http = require('http');
+const WebSocket = require('ws');
 
-// Railway uses dynamic port assignment
-const PORT = process.env.PORT || 1883;
+const HTTP_PORT = process.env.PORT || 8081;
+const TCP_PORT = process.env.MQTT_PORT ? Number(process.env.MQTT_PORT) : 1884;
 
-const clients = new Map();
-let systemActive = false;
-// topic subscriptions storage
 const subscriptions = new Map();
 
-function sendConnack(socket) {
-    socket.write(Buffer.from([0x20, 0x02, 0x00, 0x00]));
-    console.log("✅ CONNACK sent");
+function encodeRemainingLength(length) {
+    const bytes = [];
+    do {
+        let digit = length % 128;
+        length = Math.floor(length / 128);
+        if (length > 0) digit |= 0x80;
+        bytes.push(digit);
+    } while (length > 0);
+    return Buffer.from(bytes);
 }
 
-// publish helper (زي aedes.publish)
-function publish(topic, messageObj) {
-    const payload = JSON.stringify(messageObj);
-    const topicBytes = Buffer.from(topic, 'utf8');
-    const payloadBytes = Buffer.from(payload, 'utf8');
-    
-    // MQTT PUBLISH packet structure:
-    // Fixed header: 0x30 (PUBLISH, QoS 0)
-    // Remaining length: topic length + payload length + 2 (topic length field)
-    // Topic length (2 bytes)
-    // Topic
-    // Payload
-    
-    const topicLen = topicBytes.length;
-    const remainingLen = 2 + topicLen + payloadBytes.length;
-    
-    // Calculate remaining length (variable length encoding)
-    let remainingLenBytes = [];
-    let len = remainingLen;
-    do {
-        let byte = len % 128;
-        len = Math.floor(len / 128);
-        if (len > 0) byte |= 0x80;
-        remainingLenBytes.push(byte);
-    } while (len > 0);
-    
-    // Build packet
-    const packet = Buffer.concat([
-        Buffer.from([0x30]), // PUBLISH header
-        Buffer.from(remainingLenBytes), // Remaining length
-        Buffer.from([topicLen >> 8, topicLen & 0xFF]), // Topic length (big endian)
-        topicBytes, // Topic
-        payloadBytes // Payload
-    ]);
+function parseRemainingLength(buffer, offset) {
+    let multiplier = 1;
+    let value = 0;
+    let bytes = 0;
+    let encodedByte;
 
-    // Send to all subscribed clients
-    for (let [sock, subs] of subscriptions.entries()) {
-        if (subs.includes(topic)) {
-            sock.write(packet);
-            console.log(`📤 Sent to ${topic}:`, payload);
+    do {
+        encodedByte = buffer[offset + bytes];
+        value += (encodedByte & 0x7f) * multiplier;
+        multiplier *= 128;
+        bytes += 1;
+    } while ((encodedByte & 0x80) !== 0 && bytes < 4);
+
+    return { length: value, bytes };
+}
+
+function buildConnack() {
+    return Buffer.from([0x20, 0x02, 0x00, 0x00]);
+}
+
+function buildPingresp() {
+    return Buffer.from([0xD0, 0x00]);
+}
+
+function buildSuback(packetId) {
+    return Buffer.concat([Buffer.from([0x90, 0x03]), packetId, Buffer.from([0x00])]);
+}
+
+function buildPublishPacket(topic, payload) {
+    const topicBuffer = Buffer.from(topic, 'utf8');
+    const payloadBuffer = Buffer.from(payload, 'utf8');
+    const remainingLength = 2 + topicBuffer.length + payloadBuffer.length;
+    return Buffer.concat([
+        Buffer.from([0x30]),
+        encodeRemainingLength(remainingLength),
+        Buffer.from([topicBuffer.length >> 8, topicBuffer.length & 0xff]),
+        topicBuffer,
+        payloadBuffer
+    ]);
+}
+
+function sendPacket(client, packet) {
+    if (!client) return;
+    if (typeof client.write === 'function') {
+        client.write(packet);
+    } else if (typeof client.send === 'function' && client.readyState === WebSocket.OPEN) {
+        client.send(packet);
+    }
+}
+
+function addSubscription(client, topic) {
+    if (!subscriptions.has(client)) {
+        subscriptions.set(client, []);
+    }
+    const topics = subscriptions.get(client);
+    if (!topics.includes(topic)) {
+        topics.push(topic);
+    }
+}
+
+function publishToSubscribers(topic, payload) {
+    const packet = buildPublishPacket(topic, payload);
+    for (const [client, topics] of subscriptions.entries()) {
+        if (topics.includes(topic)) {
+            sendPacket(client, packet);
         }
     }
 }
 
-const server = net.createServer((socket) => {
+function handleSubscribe(client, buffer, offset, remainingLength) {
+    const packetId = buffer.slice(offset, offset + 2);
+    offset += 2;
+    while (offset < 1 + remainingLength) {
+        const topicLength = (buffer[offset] << 8) | buffer[offset + 1];
+        offset += 2;
+        const topic = buffer.slice(offset, offset + topicLength).toString('utf8');
+        offset += topicLength;
+        const qos = buffer[offset++];
+        addSubscription(client, topic);
+        console.log(`?? SUBSCRIBE ${topic} qos=${qos}`);
+    }
+    sendPacket(client, buildSuback(packetId));
+}
 
-    console.log("🔥 CLIENT CONNECTED");
+function handlePublish(client, buffer, offset, remainingLength) {
+    const topicLength = (buffer[offset] << 8) | buffer[offset + 1];
+    offset += 2;
+    const topic = buffer.slice(offset, offset + topicLength).toString('utf8');
+    offset += topicLength;
+    const payload = buffer.slice(offset, offset + remainingLength - 2 - topicLength).toString('utf8');
+    console.log(`?? PUBLISH ${topic} -> ${payload}`);
+    publishToSubscribers(topic, payload);
+}
 
-    clients.set(socket, []);
+function handleMQTTPacket(client, buffer) {
+    const packetType = buffer[0] >> 4;
+    const { length: remainingLength, bytes: lengthBytes } = parseRemainingLength(buffer, 1);
+    const offset = 1 + lengthBytes;
+
+    switch (packetType) {
+        case 1:
+            console.log('?? CONNECT');
+            sendPacket(client, buildConnack());
+            break;
+        case 3:
+            handlePublish(client, buffer, offset, remainingLength);
+            break;
+        case 8:
+            handleSubscribe(client, buffer, offset, remainingLength);
+            break;
+        case 12:
+            console.log('?? PINGREQ');
+            sendPacket(client, buildPingresp());
+            break;
+        default:
+            console.log('?? Unsupported MQTT packet type:', packetType);
+    }
+}
+
+function cleanupClient(client) {
+    subscriptions.delete(client);
+}
+
+function handleTcpConnection(socket) {
+    console.log('?? TCP client connected');
     subscriptions.set(socket, []);
-
-    socket.on('data', (data) => {
-
-        const packetType = data[0] >> 4;
-
-        // CONNECT
-        if (packetType === 1) {
-            console.log("🔗 CONNECT");
-            sendConnack(socket);
-        }
-
-        // SUBSCRIBE
-        else if (packetType === 8) {
-            console.log("📥 SUBSCRIBE received");
-            
-            // Parse MQTT SUBSCRIBE packet
-            // Skip fixed header (1 byte) and remaining length
-            let pos = 1;
-            let multiplier = 1;
-            let remainingLen = 0;
-            let byte;
-            
-            do {
-                byte = data[pos++];
-                remainingLen += (byte & 0x7F) * multiplier;
-                multiplier *= 128;
-            } while ((byte & 0x80) !== 0);
-            
-            // Skip message ID (2 bytes)
-            pos += 2;
-            
-            // Parse topic filters
-            while (pos < data.length - 1) {
-                // Topic length (2 bytes, big endian)
-                const topicLen = (data[pos] << 8) | data[pos + 1];
-                pos += 2;
-                
-                // Topic
-                const topic = data.slice(pos, pos + topicLen).toString('utf8');
-                pos += topicLen;
-                
-                // QoS (1 byte)
-                const qos = data[pos++];
-                
-                // Add to subscriptions
-                let subs = subscriptions.get(socket);
-                if (!subs.includes(topic)) {
-                    subs.push(topic);
-                    console.log(`📋 Subscribed to: ${topic}`);
-                }
-                subscriptions.set(socket, subs);
-            }
-        }
-
-        // PUBLISH
-        else if (packetType === 3) {
-            console.log("📤 PUBLISH received");
-            
-            // Parse MQTT PUBLISH packet
-            let pos = 1;
-            let multiplier = 1;
-            let remainingLen = 0;
-            let byte;
-            
-            do {
-                byte = data[pos++];
-                remainingLen += (byte & 0x7F) * multiplier;
-                multiplier *= 128;
-            } while ((byte & 0x80) !== 0);
-            
-            // Topic length (2 bytes, big endian)
-            const topicLen = (data[pos] << 8) | data[pos + 1];
-            pos += 2;
-            
-            // Topic
-            const topic = data.slice(pos, pos + topicLen).toString('utf8');
-            pos += topicLen;
-            
-            // Payload (remaining bytes)
-            const payload = data.slice(pos);
-            const payloadStr = payload.toString('utf8');
-            
-            console.log(`📦 Topic: ${topic}, Payload: ${payloadStr}`);
-            
-            // Handle status requests from ESP32
-            if (topic === "library/request_status") {
-                console.log("📋 Status request received - Sending current system state...");
-                publish("library/status", {
-                    isSystemActive: systemActive,
-                    timestamp: new Date().toISOString()
-                });
-                return;
-            }
-
-            // Handle card scans from ESP32
-            if (topic === "library/scan") {
-
-                let tagId = "UNKNOWN";
-
-                try {
-                    const json = JSON.parse(payloadStr);
-                    tagId = json.tagId;
-                } catch (error) {
-                    console.error("❌ Error parsing scan data:", error.message);
-                    return;
-                }
-
-                console.log("🏷️ Card Scanned:", tagId);
-
-                let response;
-
-                // ===== ADMIN CARD =====
-                if (tagId === "34FA78A3") {
-                    systemActive = !systemActive;  // Toggle system state
-                    response = {
-                        status: systemActive ? "System ACTIVE" : "System LOCKED",
-                        msg: systemActive ? "System Activated" : "System Locked"
-                    };
-                    console.log("🔐 Admin card - System now:", response.status);
-                }
-
-                // ===== BOOK CARDS =====
-                else if (tagId === "AF69101C") {
-                    response = {
-                        status: "Book: Circuits",
-                        msg: "Book borrowed: Circuits"
-                    };
-                    console.log("📚 Book scanned: Circuits");
-                }
-                else if (tagId === "7135704C") {
-                    response = {
-                        status: "Book: Math",
-                        msg: "Book borrowed: Math"
-                    };
-                    console.log("📚 Book scanned: Math");
-                }
-                else if (tagId === "71D8714C") {
-                    response = {
-                        status: "Book: Network",
-                        msg: "Book borrowed: Network"
-                    };
-                    console.log("📚 Book scanned: Network");
-                }
-
-                // ===== UNKNOWN CARD =====
-                else {
-                    response = {
-                        status: "Unknown Card",
-                        msg: "Card not recognized"
-                    };
-                    console.log("❓ Unknown card:", tagId);
-                }
-
-                // Send response back to ESP32 LCD
-                publish("library/lcd", response);
-
-                // Also publish to UI dashboard
-                publish("library/ui", {
-                    tagId,
-                    ...response,
-                    timestamp: new Date().toLocaleTimeString()
-                });
-
-                console.log("📡 Response sent");
-            }
-        }
-
-    });
-
+    socket.on('data', (data) => handleMQTTPacket(socket, data));
     socket.on('close', () => {
-        clients.delete(socket);
-        subscriptions.delete(socket);
+        cleanupClient(socket);
+        console.log('? TCP client disconnected');
     });
+}
 
+function handleWsConnection(ws) {
+    console.log('?? WS client connected');
+    subscriptions.set(ws, []);
+    ws.on('message', (data) => {
+        const buffer = Buffer.isBuffer(data) ? data : Buffer.from(data);
+        handleMQTTPacket(ws, buffer);
+    });
+    ws.on('close', () => {
+        cleanupClient(ws);
+        console.log('? WS client disconnected');
+    });
+}
+
+const httpServer = http.createServer((req, res) => {
+    if (req.method === 'GET' && req.url === '/health') {
+        res.writeHead(200, { 'Content-Type': 'text/plain' });
+        res.end('OK');
+        return;
+    }
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('MQTT Broker');
 });
 
-server.listen(PORT, "0.0.0.0", () => {
-    console.log("🚀 CUSTOM MQTT BROKER RUNNING");
+const wss = new WebSocket.Server({ server: httpServer });
+wss.on('connection', handleWsConnection);
+
+httpServer.listen(HTTP_PORT, () => {
+    console.log(`?? HTTP/WebSocket server running on port ${HTTP_PORT}`);
+});
+
+const tcpServer = net.createServer(handleTcpConnection);
+tcpServer.listen(TCP_PORT, '0.0.0.0', () => {
+    console.log(`?? TCP MQTT broker running locally on port ${TCP_PORT}`);
 });

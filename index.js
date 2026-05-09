@@ -20,7 +20,12 @@ const app = express();
 
 // CORS configuration for GitHub Pages frontend
 app.use(cors({
-    origin: ['https://oa6553710-crypto.github.io', 'http://localhost:3000', 'http://localhost:8080'],
+    origin: [
+        'https://oa6553710-crypto.github.io',
+        'https://library-backend-hjf2.onrender.com',
+        'http://localhost:3000',
+        'http://localhost:8080'
+    ],
     credentials: true
 }));
 app.use(express.json());
