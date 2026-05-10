@@ -318,7 +318,7 @@
         // --- Logic Kept from Original ---
         async function fetchHistoricalData() {
             try {
-                const response = await fetch(API_HISTORY_URL);
+                const response = await fetch(API_HISTORY_URL, { cache: 'no-store' });
                 const logs = await response.json();
 
                 // 1. الجزء المسؤول عن فحص حالة الأدمن أول ما الصفحة تفتح

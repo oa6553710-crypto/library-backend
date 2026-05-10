@@ -113,27 +113,37 @@ function handlePublish(client, buffer, offset, remainingLength) {
 }
 
 function handleMQTTPacket(client, buffer) {
-    const packetType = buffer[0] >> 4;
-    const { length: remainingLength, bytes: lengthBytes } = parseRemainingLength(buffer, 1);
-    const offset = 1 + lengthBytes;
+    let currentOffset = 0;
+    while (currentOffset < buffer.length) {
+        const packetType = buffer[currentOffset] >> 4;
+        const { length: remainingLength, bytes: lengthBytes } = parseRemainingLength(buffer, currentOffset + 1);
+        const offset = currentOffset + 1 + lengthBytes;
 
-    switch (packetType) {
-        case 1:
-            console.log('?? CONNECT');
-            sendPacket(client, buildConnack());
-            break;
-        case 3:
-            handlePublish(client, buffer, offset, remainingLength);
-            break;
-        case 8:
-            handleSubscribe(client, buffer, offset, remainingLength);
-            break;
-        case 12:
-            console.log('?? PINGREQ');
-            sendPacket(client, buildPingresp());
-            break;
-        default:
-            console.log('?? Unsupported MQTT packet type:', packetType);
+        // Check if we have the full packet in the buffer
+        if (currentOffset + 1 + lengthBytes + remainingLength > buffer.length) {
+            break; // Partial packet, should ideally be buffered but we break for now
+        }
+
+        switch (packetType) {
+            case 1:
+                console.log('?? CONNECT');
+                sendPacket(client, buildConnack());
+                break;
+            case 3:
+                handlePublish(client, buffer, offset, remainingLength);
+                break;
+            case 8:
+                handleSubscribe(client, buffer, offset, remainingLength);
+                break;
+            case 12:
+                console.log('?? PINGREQ');
+                sendPacket(client, buildPingresp());
+                break;
+            default:
+                console.log('?? Unsupported MQTT packet type:', packetType);
+        }
+
+        currentOffset += 1 + lengthBytes + remainingLength;
     }
 }
 
